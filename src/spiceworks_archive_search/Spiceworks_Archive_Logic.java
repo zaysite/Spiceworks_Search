@@ -195,7 +195,46 @@ public class Spiceworks_Archive_Logic
         search_Tree.display(search_Tree.getRoot());
     }
 
+    public void createSearchTree(ObservableList<Ticket> ticket_Observable_List)
+    {
+        hash_Map = new HashMap<>();
+        int counter = 0;
+        for (int i = 0; i < ticket_Observable_List.size(); i++)
+        {
+            Ticket ticket = ticket_Observable_List.get(i);
+            String description = ticket.getDescription();
 
+            description = description.toLowerCase();
+            description = description.replaceAll("[(<)>/?_™®!]", " ");
+            description = description.replaceAll("[-]", " ");
+            description = description.replaceAll("[—]", " ");
+            description = description.replaceAll("[%]", " ");
+            description = description.replaceAll("[\\\\]", " ");
+            description = description.replaceAll("[:]", " ");
+            description = description.replaceAll("[.]", " ");
+            description = description.trim();
+            String[] keywords = description.split("\\s+");
+            for (String keyword : keywords)
+            {
+
+                keyword = keyword.trim();
+                if (keyword.equalsIgnoreCase("") == false)
+                {
+                    counter++;
+                    //System.out.println(keyword);
+                    //if(hash_Map.get(keyword) == null)
+                    //{
+                    //    hash_Map.put(keyword, new ArrayList<>(1));
+                    //}
+                    //hash_Map.get(keyword).add(ticket.getId());
+                    search_Tree.insert(keyword, ticket.getId());
+                }
+
+            }
+
+        }
+        //System.out.println(counter);
+    }
 
     public int indexDocuments(IndexWriter index_Writer) throws Spiceworks_Archive_Exception, SQLException, IOException
     {
