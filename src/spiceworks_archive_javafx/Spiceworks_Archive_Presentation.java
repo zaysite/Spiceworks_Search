@@ -67,7 +67,7 @@ import javafx.util.Callback;
 import spiceworks_archive_javafx.Ticket;
 import spiceworks_archive_javafx.TicketButtonCell;
 import spiceworks_archive_search.Spiceworks_Archive_Logic;
-import spiceworks_archive_search.Spiceworks_Archive_Lucene;
+
 /**
  *
  * @author it.student
@@ -76,7 +76,6 @@ public class Spiceworks_Archive_Presentation extends Application
 {
 
     private static Spiceworks_Archive_Logic logic_Layer;
-    private static Spiceworks_Archive_Lucene lucene;
     private static ComboBox<String> technician_Combo;
     private static TextArea description_Area;
     private static TextField search_Query;
@@ -98,7 +97,8 @@ public class Spiceworks_Archive_Presentation extends Application
             notifyPreloader(new ProgressNotification(0.5));
             notifyPreloader(new LabelNotification("...Creating Search Tree..."));
             //logic_Layer.createSearchTree(ticket_List);
-            lucene = new Spiceworks_Archive_Lucene(logic_Layer);     
+            logic_Layer.createLuceneIndexes();
+               
             notifyPreloader(new ProgressNotification(1));
             notifyPreloader(new LabelNotification("...Finished..."));
             //logic_Layer.writeTreeToFile();

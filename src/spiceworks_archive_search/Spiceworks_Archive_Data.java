@@ -122,54 +122,7 @@ public class Spiceworks_Archive_Data
         return database_Response;
     }
 
-    public ResultSet[] getTickets(ArrayList<String> terms) throws Spiceworks_Archive_Exception
-    {
-
-        int size = terms.size();
-        int queries = size % 1000;
-        int total = size / 1000;
-        int first = 0;
-        int max = 999;
-        ResultSet[] database_Response;
-        if(queries != 0)
-        {
-             database_Response = new ResultSet[total+1];
-        }
-        else
-        {
-            database_Response = new ResultSet[total];
-        }
-        
-        
-        for (int j = 0; j < total+1; j++)
-        {
-            if(j == total)
-            {
-                first = max;
-                max = size;
-                
-            }
-            String where = "WHERE ID=\"" + terms.get(first) + "\"";
-            for (int i = first+1; i < max && i < size; i++)
-            {
-                where += " OR ID=\"" + terms.get(i) + "\"";
-            }
-            database_Response[j] = QueryDatabase("select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments " + where);
-            if(j != total-1)   { 
-                max += 999;
-                first += 999;}
-            
-            
-        }
-
-        
-        
-        if (database_Response == null)
-        {
-            throw new Spiceworks_Archive_Exception("ERROR TICKETS COULD NOT BE RETURNED BASED ON TECHNICIAN NAME!");
-        }
-        return database_Response;
-    }
+   
     
     public ResultSet getLuceneIndexResults() throws Spiceworks_Archive_Exception
     {
