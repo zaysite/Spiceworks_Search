@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2016 Jordan Kahtava (it.student).
+ * Copyright 2016 Jordan Kahtava.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StoredField;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexOptions;
@@ -65,8 +64,10 @@ public class Spiceworks_Archive_Logic
 
     private static Spiceworks_Archive_Data data_Layer;
 
-    private static ObservableList<Ticket> ticket_Observable_List;
-    private static ObservableList<String> ticket_IDs_Observable_List;
+    private static ObservableList<Ticket> tickets;
+    private static ObservableList<Ticket> tickets_With_Attachments;
+    private static ObservableList<String> ticket_IDs;
+    
     public static final String INDEX_PATH = "H:\\Spiceworks_Archive_Database\\INDEX";
     public static final File INDEX_DIRECTORY = new File(INDEX_PATH);
     private static final int MAX_HITS = 10000;
@@ -97,13 +98,21 @@ public class Spiceworks_Archive_Logic
             query = "(description:(" + terms + ") summary:(" + terms + ") attachment_name:(" + terms + ")) AND (first_name:\"" + first_Last[0] + "\" AND last_name:\""+ first_Last[1] +"\")";
             
         }
-        System.out.println(query);
         
-        if(terms.trim().length() == 0)
+        if(first_Last.length == 2 && terms.trim().length() == 0)
         {
-            return ticket_Observable_List;
+            query = "(first_name:\"" + first_Last[0] + "\" AND last_name:\""+ first_Last[1] +"\")";
+        }
+        else if(terms.trim().length() == 0 && has_Attachment == false)
+        {
+            return tickets;
+        }
+        else if(terms.trim().length() == 0 && has_Attachment == true)
+        {
+            return tickets_With_Attachments;
         }
         
+        System.out.println(query);
         return searchIndex(query);
     }
 
@@ -139,26 +148,32 @@ public class Spiceworks_Archive_Logic
 
     public ObservableList<Ticket> getTickets()
     {
-        ticket_Observable_List = FXCollections.observableArrayList();
-        ticket_IDs_Observable_List = FXCollections.observableArrayList();
-        ResultSet tickets;
+        tickets = FXCollections.observableArrayList();
+        ticket_IDs = FXCollections.observableArrayList();
+        tickets_With_Attachments  = FXCollections.observableArrayList();
+        ResultSet database_Results;
         try
         {
 
-            tickets = data_Layer.getTickets();
-            if (tickets != null)
+            database_Results = data_Layer.getTickets();
+            if (database_Results != null)
             {
-                while (tickets.next())
+                while (database_Results.next())
                 {
 
-                    String id = tickets.getString("id");
-                    String summary = tickets.getString("summary");
-                    String description = tickets.getString("description");
-                    String first_Name = tickets.getString("first_name");
-                    String last_Name = tickets.getString("last_name");
-                    String attachment_Name = tickets.getString("attachment_name");
-                    ticket_Observable_List.add(new Ticket(id, summary, description, first_Name, last_Name, attachment_Name));
-                    ticket_IDs_Observable_List.add(tickets.getString("id"));
+                    String id = database_Results.getString("id");
+                    String summary = database_Results.getString("summary");
+                    String description = database_Results.getString("description");
+                    String first_Name = database_Results.getString("first_name");
+                    String last_Name = database_Results.getString("last_name");
+                    String attachment_Name = database_Results.getString("attachment_name");
+                    tickets.add(new Ticket(id, summary, description, first_Name, last_Name, attachment_Name));
+                    if(attachment_Name != null)
+                    {
+                        tickets_With_Attachments.add(new Ticket(id, summary, description, first_Name, last_Name, attachment_Name));
+                    }
+                    
+                    ticket_IDs.add(database_Results.getString("id"));
                 }
 
             }
@@ -169,7 +184,7 @@ public class Spiceworks_Archive_Logic
             Logger.getLogger(Spiceworks_Archive_Logic.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return ticket_Observable_List;
+        return tickets;
     }
 
     public boolean createLuceneIndexes()
@@ -218,20 +233,21 @@ public class Spiceworks_Archive_Logic
 
             index_Document.add(new StoredField("id", database_Results.getInt("id")));
             String summary = database_Results.getString("summary");
-            if (summary != null)
+            if(summary == null)
             {
-                index_Document.add(new TextField("summary", summary, Field.Store.YES));
+                summary = "";
             }
+            index_Document.add(new TextField("summary", summary, Field.Store.YES));
             index_Document.add(new TextField("description", database_Results.getString("description"), Field.Store.YES));
             index_Document.add(new TextField("first_name", database_Results.getString("first_name"), Field.Store.YES));
             index_Document.add(new TextField("last_name", database_Results.getString("last_name"), Field.Store.YES));
             String attachment_Name = database_Results.getString("attachment_name");
 
-            if (attachment_Name != null)
+            if (attachment_Name == null)
             {
-                index_Document.add(new TextField("attachment_name", attachment_Name, Field.Store.YES));
+                attachment_Name = "";
             }
-
+            index_Document.add(new TextField("attachment_name", attachment_Name, Field.Store.YES));
             index_Writer.addDocument(index_Document);
             document_Count++;
 
@@ -249,7 +265,7 @@ public class Spiceworks_Archive_Logic
             Directory directory = FSDirectory.open(INDEX_DIRECTORY.toPath());
             MultiFieldQueryParser query_Parser = new MultiFieldQueryParser(new String[]
             {
-                "summary", "description", "first_name", "last_name"
+                "summary", "description", "first_name", "last_name", "attachment_name"
             }, new StandardAnalyzer());
             DirectoryReader reader = DirectoryReader.open(directory);
             IndexSearcher searcher = new IndexSearcher(reader);
@@ -274,8 +290,8 @@ public class Spiceworks_Archive_Logic
                 int docId = hits[i].doc;
 
                 Document d = searcher.doc(docId);
-                int index = ticket_IDs_Observable_List.indexOf(d.get("id"));
-                Ticket current = ticket_Observable_List.get(index);
+                int index = ticket_IDs.indexOf(d.get("id"));
+                Ticket current = tickets.get(index);
                 if(has_Attachment)
                 {
                     if(current.hasAttachment())

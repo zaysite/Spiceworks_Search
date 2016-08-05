@@ -1,0 +1,5 @@
+Purpose and Intended Audience
+http://www.apache.org/legal/src-headers.html
+
+APPENDIX: How to apply the Apache License to your work
+http://apache.org/licenses/LICENSE-2.0.html#apply

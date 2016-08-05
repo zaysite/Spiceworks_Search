@@ -3,7 +3,7 @@ package spiceworks_archive_javafx;
 /*
  * The MIT License
  *
- * Copyright 2016 it.student.
+ * Copyright 2016 Jordan Kahtava.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,6 @@ package spiceworks_archive_javafx;
  * THE SOFTWARE.
  */
 
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
 import javafx.application.Preloader;
 import javafx.application.Preloader.ProgressNotification;
 import javafx.application.Preloader.StateChangeNotification;
@@ -32,23 +31,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
 import javafx.scene.control.Label;
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
-import static com.sun.deploy.util.ReflectionUtil.instanceOf;
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundSize;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -60,22 +46,43 @@ public class Spiceworks_Archive_Load extends Preloader
 {
     
     private ProgressBar progress_Bar;
-    private Label label;
+    private Label title_Label;
+    private Label progress_Label;
     private Stage stage;
-    private final int HEIGHT = 150;
-    private final int WIDTH = 300;
+    private final int HEIGHT = 350;
+    private final int WIDTH = 520;
     
     private Scene createPreloaderScene()
     {
-        label = new Label("...LOADING...");
+        title_Label = new Label("Welcome to Jordans Spicework Ticket Search");
+        title_Label.setStyle("-fx-font: 24 arial; -fx-text-fill: white;");
+        
+        progress_Label = new Label("...LOADING...");
+        progress_Label.setStyle("-fx-text-fill: white;");
         progress_Bar = new ProgressBar(0.0);
         progress_Bar.setProgress(0.0);
         
         BorderPane border_Pane = new BorderPane();
-        VBox Hbox = new VBox();
-        Hbox.setAlignment(Pos.CENTER);
-        Hbox.getChildren().addAll(label,progress_Bar);
-        border_Pane.setCenter(Hbox);
+        VBox VBox_Title = new VBox();
+        VBox_Title.setAlignment(Pos.CENTER);
+        VBox_Title.setStyle("-fx-background-color: black;");
+        VBox_Title.getChildren().addAll(title_Label);
+        
+        Pane pane = new Pane();
+        pane.setStyle("-fx-background-image: url(\"spiceworks_archive_javafx/Images/coffee-777612_1280.jpg\"); -fx-background-size: 520,350; -fx-background-repeat: no-repeat");
+        
+        VBox VBox = new VBox();
+        VBox.setAlignment(Pos.CENTER);
+        VBox.setStyle("-fx-background-color: black;");
+        VBox.getChildren().addAll(progress_Label,progress_Bar);
+        //VBox.setStyle("-fx-background-image: url(\"spiceworks_archive_javafx/Images/coffee-777612_1280.jpg\"); -fx-background-size: 520,350; -fx-background-repeat: no-repeat");
+        //-fx-background-size: 300,150;
+        
+        //border_Pane.setStyle("-fx-background-image: url(\"spiceworks_archive_javafx/Images/coffee-777612_1280.jpg\"); -fx-background-size: 520,350; -fx-background-repeat: no-repeat; ");
+        border_Pane.setTop(VBox_Title);
+        border_Pane.setCenter(pane);
+        border_Pane.setBottom(VBox);
+        
         
         return new Scene(border_Pane, WIDTH, HEIGHT);        
     }
@@ -84,8 +91,17 @@ public class Spiceworks_Archive_Load extends Preloader
     public void start(Stage stage) throws Exception
     {
         this.stage = stage;
-        stage.setScene(createPreloaderScene());        
-        
+        stage.setScene(createPreloaderScene());     
+        stage.setMaxHeight(HEIGHT+20);
+        stage.setMaxWidth(WIDTH);
+        stage.setMinHeight(HEIGHT+20);
+        stage.setMinWidth(WIDTH);
+        stage.setTitle("Initializing Search Program");
+        Image icon64 = new Image("spiceworks_archive_javafx/Images/64x64.png");
+        Image icon32 = new Image("spiceworks_archive_javafx/Images/32x32.png");
+        Image icon16 = new Image("spiceworks_archive_javafx/Images/16x16.png");
+        stage.getIcons().addAll(icon64,icon32,icon16);
+        //stage.setResizable(false);
         stage.show();
     }
     
@@ -115,7 +131,7 @@ public class Spiceworks_Archive_Load extends Preloader
         if(preloader_Notification instanceof LabelNotification)
         {
             LabelNotification pn= (LabelNotification) preloader_Notification;
-            label.setText(pn.getLabel());
+            progress_Label.setText(pn.getLabel());
         }
     }
     

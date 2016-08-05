@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2016 Jordan Kahtava (it.student).
+ * Copyright 2016 Jordan Kahtava.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,6 @@
 package spiceworks_archive_javafx;
 
 import com.sun.javafx.application.LauncherImpl;
-import java.awt.Desktop;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.text.Collator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,7 +32,6 @@ import javafx.application.Preloader.ProgressNotification;
 import javafx.application.Preloader.StateChangeNotification;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
@@ -50,22 +45,19 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TableView;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import spiceworks_archive_javafx.Ticket;
-import spiceworks_archive_javafx.TicketButtonCell;
 import spiceworks_archive_search.Spiceworks_Archive_Logic;
 
 /**
@@ -95,7 +87,7 @@ public class Spiceworks_Archive_Presentation extends Application
             notifyPreloader(new LabelNotification("...Retrieving Tickets..."));
             ticket_List = logic_Layer.getTickets();
             notifyPreloader(new ProgressNotification(0.5));
-            notifyPreloader(new LabelNotification("...Creating Search Tree..."));
+            notifyPreloader(new LabelNotification("...Creating Search Index..."));
             //logic_Layer.createSearchTree(ticket_List);
             logic_Layer.createLuceneIndexes();
             notifyPreloader(new ProgressNotification(1));
@@ -133,17 +125,24 @@ public class Spiceworks_Archive_Presentation extends Application
         
         SplitPane split_Pane = new SplitPane();
         split_Pane.getItems().addAll(ticket_View,description_Area);
-        
+        split_Pane.setDividerPositions(0.8);
         left_Border_Pane.setBottom(toolbar);
         
         left_Border_Pane.setCenter(split_Pane);
         //border.setRight(border2);
             
         Scene scene = new Scene(left_Border_Pane, 1050, 500);
+        
 
         mainStage.setTitle("Spiceworks Advanced Search");
+        Image icon64 = new Image("spiceworks_archive_javafx/Images/64x64.png");
+        Image icon32 = new Image("spiceworks_archive_javafx/Images/32x32.png");
+        Image icon16 = new Image("spiceworks_archive_javafx/Images/16x16.png");
+        mainStage.getIcons().addAll(icon64,icon32,icon16);
         mainStage.setScene(scene);
+        mainStage.setMaximized(true);
         mainStage.show();
+        
     }
 
     /**
@@ -157,11 +156,29 @@ public class Spiceworks_Archive_Presentation extends Application
         hbox_Toolbar.setPadding(new Insets(15, 12, 15, 12));
         hbox_Toolbar.setSpacing(10);
         hbox_Toolbar.setAlignment(Pos.CENTER);
-        //hbox.setStyle("-fx-background-color: #336699;");
+        //hbox_Toolbar.setStyle("-fx-background-color: #336699;");
+        
+        //hbox_Toolbar.setStyle("-fx-background-image: url(\"spiceworks_archive_javafx/Images/coffee-777612_1280.jpg\");");
 
         //Create Textfield and set default values
         search_Query = new TextField();
         search_Query.setText("Search Terms");
+        search_Query.setOnKeyPressed(new EventHandler<KeyEvent>()
+        {
+            
+            @Override
+            public void handle(KeyEvent keyEvent)
+            {
+                if(keyEvent.getCode().equals(KeyCode.ENTER))
+                {
+                        ticket_View.setItems(logic_Layer.search(search_Query.getText(),technician_Combo.getSelectionModel().getSelectedItem()));
+                        ticket_View.getSelectionModel().clearSelection();
+
+                }
+                
+            }
+        });
+        
         
         //Create CheckBox
         has_Attachment = new CheckBox();
@@ -253,8 +270,9 @@ public class Spiceworks_Archive_Presentation extends Application
         TableColumn<Ticket, String> ticket_Summary = new TableColumn<>("Summary");
         ticket_Summary.setCellValueFactory(new PropertyValueFactory("summary"));
 
-        //TableColumn<Ticket, String> ticket_Description = new TableColumn<>("Description");
-        //ticket_Description.setCellValueFactory(new PropertyValueFactory("description"));
+        TableColumn<Ticket, String> ticket_Attachment = new TableColumn<>("Attachment");
+        ticket_Attachment.setCellValueFactory(new PropertyValueFactory("attachment_Name"));
+        
         TableColumn<Ticket, String> ticket_First_Name = new TableColumn<>("First Name");
         ticket_First_Name.setCellValueFactory(new PropertyValueFactory("first_Name"));
 
@@ -293,7 +311,7 @@ public class Spiceworks_Archive_Presentation extends Application
 
         });
 
-        table_View.getColumns().addAll(ticket_ID, ticket_Summary, ticket_First_Name, ticket_Last_Name, actionCol);
+        table_View.getColumns().addAll(ticket_ID, ticket_Summary, ticket_First_Name, ticket_Last_Name, actionCol,ticket_Attachment);
         
         table_View.setItems(ticket_List);
         
