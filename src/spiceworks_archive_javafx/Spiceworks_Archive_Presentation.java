@@ -98,7 +98,6 @@ public class Spiceworks_Archive_Presentation extends Application
             notifyPreloader(new LabelNotification("...Creating Search Tree..."));
             //logic_Layer.createSearchTree(ticket_List);
             logic_Layer.createLuceneIndexes();
-               
             notifyPreloader(new ProgressNotification(1));
             notifyPreloader(new LabelNotification("...Finished..."));
             //logic_Layer.writeTreeToFile();
@@ -166,7 +165,11 @@ public class Spiceworks_Archive_Presentation extends Application
         
         //Create CheckBox
         has_Attachment = new CheckBox();
-        
+        has_Attachment.setOnAction((ActionEvent event)
+                -> 
+                {
+                    logic_Layer.toggleAttachmentQuery();
+        });
         //Create Button and set the event that runs when clicked.
         Button search_Button = new Button();
         search_Button.setText("Search");
@@ -174,7 +177,8 @@ public class Spiceworks_Archive_Presentation extends Application
                 -> 
                 {
                     //TO DO: ADD Search Options
-                    ticket_View.setItems(logic_Layer.search(search_Query.getText()));
+                    ticket_View.setItems(logic_Layer.search(search_Query.getText(),technician_Combo.getSelectionModel().getSelectedItem()));
+                    ticket_View.getSelectionModel().clearSelection();
         });
         
         //Create ComboBox and fill with technician names.
@@ -206,9 +210,11 @@ public class Spiceworks_Archive_Presentation extends Application
             @Override
             public void handle(MouseEvent mouseEvent)
             {
-               
+                if(ticket_View.getSelectionModel().isEmpty() == false)
+                {
                 Ticket current  = (Ticket) ticket_View.getItems().get(ticket_View.getSelectionModel().getSelectedIndex());
                 description_Area.setText(current.getDescription());
+                }
             }
 
         });

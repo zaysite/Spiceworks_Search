@@ -23,8 +23,12 @@
  */
 package spiceworks_archive_search;
 
-import java.sql.*;
-import java.util.ArrayList;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 /**
@@ -34,6 +38,10 @@ import java.util.Properties;
 public class Spiceworks_Archive_Data
 {
 
+    private static final String TICKET_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments";
+    private static final String LUCENE_INDEX_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments";
+    private static final String TECHNICIAN_QUERY = "select first_name,last_name from admins";
+    private static final String DATABASE_CONNECTION = "jdbc:SQLite:H:\\Spiceworks_Archive_Database\\spiceworks_prod.db";
     private static Connection database_Connection;
     private static Properties connection_Properties;
 
@@ -49,7 +57,7 @@ public class Spiceworks_Archive_Data
             //spiceworks_prod.db does not require any permissions so connection_Properties is empty.
             connection_Properties = new Properties();
             //create a connection to the sqlite database.
-            database_Connection = DriverManager.getConnection("jdbc:SQLite:H:\\Spiceworks_Archive_Database\\spiceworks_prod.db", connection_Properties);
+            database_Connection = DriverManager.getConnection(DATABASE_CONNECTION, connection_Properties);
 
         }
         catch (SQLException ex)
@@ -86,7 +94,7 @@ public class Spiceworks_Archive_Data
      */
     public ResultSet getTechnicians() throws Spiceworks_Archive_Exception
     {
-        ResultSet database_Response = QueryDatabase("select first_name,last_name from admins");
+        ResultSet database_Response = QueryDatabase(TECHNICIAN_QUERY);
 
         if (database_Response == null)
         {
@@ -98,7 +106,7 @@ public class Spiceworks_Archive_Data
 
     public ResultSet getTickets() throws Spiceworks_Archive_Exception
     {
-        ResultSet database_Response = QueryDatabase("select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments");
+        ResultSet database_Response = QueryDatabase(TICKET_QUERY);
         if (database_Response == null)
         {
             throw new Spiceworks_Archive_Exception("ERROR TICKETS COULD NOT BE RETURNED!");
@@ -106,6 +114,7 @@ public class Spiceworks_Archive_Data
         return database_Response;
     }
 
+    /*
     public ResultSet getTickets(String[] terms, String first_name, String last_name) throws Spiceworks_Archive_Exception
     {
         String where = "WHERE ID=" + terms[0];
@@ -120,14 +129,14 @@ public class Spiceworks_Archive_Data
             throw new Spiceworks_Archive_Exception("ERROR TICKETS COULD NOT BE RETURNED BASED ON TECHNICIAN NAME!");
         }
         return database_Response;
-    }
+    }*/
 
    
     
     public ResultSet getLuceneIndexResults() throws Spiceworks_Archive_Exception
     {
         
-        ResultSet database_Response = QueryDatabase("select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments");
+        ResultSet database_Response = QueryDatabase(LUCENE_INDEX_QUERY);
 
         if (database_Response == null)
         {

@@ -23,25 +23,18 @@
  */
 package spiceworks_archive_search;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
@@ -76,19 +69,42 @@ public class Spiceworks_Archive_Logic
     private static ObservableList<String> ticket_IDs_Observable_List;
     public static final String INDEX_PATH = "H:\\Spiceworks_Archive_Database\\INDEX";
     public static final File INDEX_DIRECTORY = new File(INDEX_PATH);
-    private static final int MAX_HITS = 100;
+    private static final int MAX_HITS = 10000;
+    private static boolean has_Attachment = false;
 
     public Spiceworks_Archive_Logic()
     {
         data_Layer = new Spiceworks_Archive_Data();
     }
 
-    public ObservableList<Ticket> search(String terms)
+    public void toggleAttachmentQuery()
     {
-
-        ObservableList<Ticket> ticket_List = FXCollections.observableArrayList();
-
-        return ticket_List;
+        if(has_Attachment)
+        {
+            has_Attachment = false;
+        }
+        else
+        {
+            has_Attachment = true;
+        }
+    }
+    public ObservableList<Ticket> search(String terms,String technician)
+    {
+        String[] first_Last = technician.split("[ ]");
+        String query = "description:( " + terms + ") summary:(" + terms +") attachment_name:(" + terms + ")" ;
+        if(first_Last.length == 2)
+        {
+            query = "(description:(" + terms + ") summary:(" + terms + ") attachment_name:(" + terms + ")) AND (first_name:\"" + first_Last[0] + "\" AND last_name:\""+ first_Last[1] +"\")";
+            
+        }
+        System.out.println(query);
+        
+        if(terms.trim().length() == 0)
+        {
+            return ticket_Observable_List;
+        }
+        
+        return searchIndex(query);
     }
 
     public ObservableList<String> getTechnicians()
@@ -124,7 +140,8 @@ public class Spiceworks_Archive_Logic
     public ObservableList<Ticket> getTickets()
     {
         ticket_Observable_List = FXCollections.observableArrayList();
-        ResultSet tickets = null;
+        ticket_IDs_Observable_List = FXCollections.observableArrayList();
+        ResultSet tickets;
         try
         {
 
@@ -187,7 +204,7 @@ public class Spiceworks_Archive_Logic
         return false;
     }
 
-    public int indexDocuments(IndexWriter index_Writer) throws Spiceworks_Archive_Exception, SQLException, IOException
+    private int indexDocuments(IndexWriter index_Writer) throws Spiceworks_Archive_Exception, SQLException, IOException
     {
         ResultSet database_Results = data_Layer.getLuceneIndexResults();
         int document_Count = 0;
@@ -206,13 +223,13 @@ public class Spiceworks_Archive_Logic
                 index_Document.add(new TextField("summary", summary, Field.Store.YES));
             }
             index_Document.add(new TextField("description", database_Results.getString("description"), Field.Store.YES));
-            index_Document.add(new StringField("first_name", database_Results.getString("first_name"), Field.Store.YES));
-            index_Document.add(new StringField("last_name", database_Results.getString("last_name"), Field.Store.YES));
+            index_Document.add(new TextField("first_name", database_Results.getString("first_name"), Field.Store.YES));
+            index_Document.add(new TextField("last_name", database_Results.getString("last_name"), Field.Store.YES));
             String attachment_Name = database_Results.getString("attachment_name");
 
             if (attachment_Name != null)
             {
-                index_Document.add(new StringField("attachment_name", attachment_Name, Field.Store.YES));
+                index_Document.add(new TextField("attachment_name", attachment_Name, Field.Store.YES));
             }
 
             index_Writer.addDocument(index_Document);
@@ -223,7 +240,7 @@ public class Spiceworks_Archive_Logic
         return document_Count;
     }
 
-    public ObservableList<Ticket> searchIndex(String query_String)
+    private ObservableList<Ticket> searchIndex(String query_String)
     {
         ObservableList<Ticket> ticket_List = FXCollections.observableArrayList();
 
@@ -258,8 +275,22 @@ public class Spiceworks_Archive_Logic
 
                 Document d = searcher.doc(docId);
                 int index = ticket_IDs_Observable_List.indexOf(d.get("id"));
-                ticket_List.add(ticket_Observable_List.get(index));
-                System.out.println("\"ID:\" " + d.get("id") + ", \"Summary:\" " + d.get("summary") + ", \"Description:\" " + d.get("description"));
+                Ticket current = ticket_Observable_List.get(index);
+                if(has_Attachment)
+                {
+                    if(current.hasAttachment())
+                    {
+                        ticket_List.add(current);
+                    }
+                    
+                }
+                else
+                {
+                    ticket_List.add(current);
+                }
+                
+                
+                //System.out.println("\"ID:\" " + d.get("id") + ", \"Summary:\" " + d.get("summary") + ", \"Description:\" " + d.get("description"));
 
             }
 
@@ -271,11 +302,7 @@ public class Spiceworks_Archive_Logic
             }
 
         }
-        catch (IOException ex)
-        {
-            
-        }
-        catch (ParseException ex)
+        catch (IOException | ParseException ex)
         {
             
         }
