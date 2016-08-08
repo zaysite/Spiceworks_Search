@@ -49,6 +49,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TableView;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
@@ -71,6 +72,8 @@ public class Spiceworks_Archive_Presentation extends Application
     private static ComboBox<String> technician_Combo;
     private static TextArea description_Area;
     private static TextField search_Query;
+    private static Label submitted_Query;
+    private static Tooltip submitted_Tooltip;
     private TableView ticket_View;
     private static CheckBox has_Attachment;
     private static ObservableList<Ticket> ticket_List;
@@ -94,7 +97,7 @@ public class Spiceworks_Archive_Presentation extends Application
             notifyPreloader(new LabelNotification("...Finished..."));
             //logic_Layer.writeTreeToFile();
             Thread.sleep(300);
-            
+
             notifyPreloader(new StateChangeNotification(
                     StateChangeNotification.Type.BEFORE_START));
         }
@@ -103,50 +106,45 @@ public class Spiceworks_Archive_Presentation extends Application
             Logger.getLogger(Spiceworks_Archive_Presentation.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     @Override
     public void start(Stage mainStage)
     {
-        
 
         HBox toolbar = createToolbar();
         ticket_View = createTableView(mainStage);
-        
-       
+
         BorderPane left_Border_Pane = new BorderPane();
-        
-        
-        
+
         BorderPane right_Border_Pane = new BorderPane();
         description_Area = new TextArea();
         description_Area.setEditable(false);
         right_Border_Pane.setCenter(description_Area);
         //border2.getChildren().addAll();
-        
+
         SplitPane split_Pane = new SplitPane();
-        split_Pane.getItems().addAll(ticket_View,description_Area);
+        split_Pane.getItems().addAll(ticket_View, description_Area);
         split_Pane.setDividerPositions(0.8);
         left_Border_Pane.setBottom(toolbar);
-        
+
         left_Border_Pane.setCenter(split_Pane);
         //border.setRight(border2);
-            
+
         Scene scene = new Scene(left_Border_Pane, 1050, 500);
-        
 
         mainStage.setTitle("Spiceworks Advanced Search");
         Image icon64 = new Image("spiceworks_archive_javafx/Images/64x64.png");
         Image icon32 = new Image("spiceworks_archive_javafx/Images/32x32.png");
         Image icon16 = new Image("spiceworks_archive_javafx/Images/16x16.png");
-        mainStage.getIcons().addAll(icon64,icon32,icon16);
+        mainStage.getIcons().addAll(icon64, icon32, icon16);
         mainStage.setScene(scene);
         mainStage.setMaximized(true);
         mainStage.show();
-        
+
     }
 
     /**
-     * 
+     *
      * @return HBox a HBox object with a textField, Button, CheckBox, and labels
      */
     private HBox createToolbar()
@@ -156,30 +154,39 @@ public class Spiceworks_Archive_Presentation extends Application
         hbox_Toolbar.setPadding(new Insets(15, 12, 15, 12));
         hbox_Toolbar.setSpacing(10);
         hbox_Toolbar.setAlignment(Pos.CENTER);
-        //hbox_Toolbar.setStyle("-fx-background-color: #336699;");
-        
-        //hbox_Toolbar.setStyle("-fx-background-image: url(\"spiceworks_archive_javafx/Images/coffee-777612_1280.jpg\");");
 
+        Tooltip tooltip = new Tooltip("Commands: \n Quotations return only tickets matching the exact phrase ex.\"Jordan Kahtava\" \n "
+                + "The AND keyword can be used to return tickets that have both words or phrases ex. \"Jordan Kahtava\" AND APPENTRY \n"
+                + "The OR keyword is used by default for all searches ex. Search OR Term is the same as Search Term \n"
+                + "The + can be added to a term to only return results containing that word ex. +Jordan \n"
+                + "The - can be added to return tickets that do not contain that word ex. +Jordan -Kahtava");
+        //hbox_Toolbar.setStyle("-fx-background-color: #336699;");
+
+        //hbox_Toolbar.setStyle("-fx-background-image: url(\"spiceworks_archive_javafx/Images/coffee-777612_1280.jpg\");");
         //Create Textfield and set default values
         search_Query = new TextField();
         search_Query.setText("Search Terms");
+
+        search_Query.setTooltip(tooltip);
         search_Query.setOnKeyPressed(new EventHandler<KeyEvent>()
         {
-            
+
             @Override
             public void handle(KeyEvent keyEvent)
             {
-                if(keyEvent.getCode().equals(KeyCode.ENTER))
+                if (keyEvent.getCode().equals(KeyCode.ENTER))
                 {
-                        ticket_View.setItems(logic_Layer.search(search_Query.getText(),technician_Combo.getSelectionModel().getSelectedItem()));
-                        ticket_View.getSelectionModel().clearSelection();
+                    ticket_View.setItems(logic_Layer.search(search_Query.getText(), technician_Combo.getSelectionModel().getSelectedItem(), submitted_Tooltip));
+                    ticket_View.getSelectionModel().clearSelection();
 
                 }
-                
+
             }
+
         });
-        
-        
+        submitted_Tooltip = new Tooltip();
+        submitted_Query = new Label("Hover to Show Query");
+        submitted_Query.setTooltip(submitted_Tooltip);
         //Create CheckBox
         has_Attachment = new CheckBox();
         has_Attachment.setOnAction((ActionEvent event)
@@ -194,10 +201,10 @@ public class Spiceworks_Archive_Presentation extends Application
                 -> 
                 {
                     //TO DO: ADD Search Options
-                    ticket_View.setItems(logic_Layer.search(search_Query.getText(),technician_Combo.getSelectionModel().getSelectedItem()));
+                    ticket_View.setItems(logic_Layer.search(search_Query.getText(), technician_Combo.getSelectionModel().getSelectedItem(), submitted_Tooltip));
                     ticket_View.getSelectionModel().clearSelection();
         });
-        
+
         //Create ComboBox and fill with technician names.
         technician_Combo = new ComboBox<>();
         //Initialize the list that will be used by the ComboBox
@@ -206,14 +213,14 @@ public class Spiceworks_Archive_Presentation extends Application
         technician_Combo.setItems(new SortedList<>(technician_observable_List, Collator.getInstance()));
         //select first element to prevent null
         technician_Combo.getSelectionModel().selectFirst();
-        
+
         //Create the Labels for the above Controls
         Label search_Label = new Label("Search Database: ");
         Label technician_Label = new Label("Technician: ");
         Label attachment_Label = new Label("Has Attachment: ");
 
         //Add the controls and labels to the HBox
-        hbox_Toolbar.getChildren().addAll(search_Label, search_Query, technician_Label, technician_Combo, search_Button,attachment_Label,has_Attachment);
+        hbox_Toolbar.getChildren().addAll(search_Label, search_Query, technician_Label, technician_Combo, search_Button, attachment_Label, has_Attachment, submitted_Query);
 
         return hbox_Toolbar;
     }
@@ -227,39 +234,40 @@ public class Spiceworks_Archive_Presentation extends Application
             @Override
             public void handle(MouseEvent mouseEvent)
             {
-                if(ticket_View.getSelectionModel().isEmpty() == false)
+                if (ticket_View.getSelectionModel().isEmpty() == false)
                 {
-                Ticket current  = (Ticket) ticket_View.getItems().get(ticket_View.getSelectionModel().getSelectedIndex());
-                description_Area.setText(current.getDescription());
+                    Ticket current = (Ticket) ticket_View.getItems().get(ticket_View.getSelectionModel().getSelectedIndex());
+                    description_Area.setText(current.getDescription());
                 }
             }
 
         });
         table_View.setOnKeyPressed(new EventHandler<KeyEvent>()
         {
-            
+
             @Override
             public void handle(KeyEvent keyEvent)
             {
-                if(keyEvent.getCode().equals(KeyCode.UP))
+                if (keyEvent.getCode().equals(KeyCode.UP))
                 {
-                    if(ticket_View.getSelectionModel().getSelectedIndex() > 0)
+                    if (ticket_View.getSelectionModel().getSelectedIndex() > 0)
                     {
-                        Ticket current  = (Ticket) ticket_View.getItems().get(ticket_View.getSelectionModel().getSelectedIndex()-1);
+                        Ticket current = (Ticket) ticket_View.getItems().get(ticket_View.getSelectionModel().getSelectedIndex() - 1);
                         description_Area.setText(current.getDescription());
                     }
-                    
+
                 }
-                else if(keyEvent.getCode().equals(KeyCode.DOWN))
+                else if (keyEvent.getCode().equals(KeyCode.DOWN))
                 {
-                    if(ticket_View.getSelectionModel().getSelectedIndex() < ticket_View.getItems().size() - 1 )
+                    if (ticket_View.getSelectionModel().getSelectedIndex() < ticket_View.getItems().size() - 1)
                     {
-                        Ticket current  = (Ticket) ticket_View.getItems().get(ticket_View.getSelectionModel().getSelectedIndex()+1);
+                        Ticket current = (Ticket) ticket_View.getItems().get(ticket_View.getSelectionModel().getSelectedIndex() + 1);
                         description_Area.setText(current.getDescription());
                     }
-                    
+
                 }
             }
+
         });
         // table_View.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
@@ -272,7 +280,7 @@ public class Spiceworks_Archive_Presentation extends Application
 
         TableColumn<Ticket, String> ticket_Attachment = new TableColumn<>("Attachment");
         ticket_Attachment.setCellValueFactory(new PropertyValueFactory("attachment_Name"));
-        
+
         TableColumn<Ticket, String> ticket_First_Name = new TableColumn<>("First Name");
         ticket_First_Name.setCellValueFactory(new PropertyValueFactory("first_Name"));
 
@@ -311,11 +319,10 @@ public class Spiceworks_Archive_Presentation extends Application
 
         });
 
-        table_View.getColumns().addAll(ticket_ID, ticket_Summary, ticket_First_Name, ticket_Last_Name, actionCol,ticket_Attachment);
-        
+        table_View.getColumns().addAll(ticket_ID, ticket_Summary, ticket_First_Name, ticket_Last_Name, actionCol, ticket_Attachment);
+
         table_View.setItems(ticket_List);
-        
-        
+
         return table_View;
 
     }
@@ -325,8 +332,7 @@ public class Spiceworks_Archive_Presentation extends Application
      */
     public static void main(String[] args)
     {
-        LauncherImpl.launchApplication(Spiceworks_Archive_Presentation.class,Spiceworks_Archive_Load.class,args);
-        
+        LauncherImpl.launchApplication(Spiceworks_Archive_Presentation.class, Spiceworks_Archive_Load.class, args);
 
     }
 

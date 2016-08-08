@@ -31,6 +31,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -89,7 +91,7 @@ public class Spiceworks_Archive_Logic
             has_Attachment = true;
         }
     }
-    public ObservableList<Ticket> search(String terms,String technician)
+    public ObservableList<Ticket> search(String terms,String technician, Tooltip submited_Query)
     {
         String[] first_Last = technician.split("[ ]");
         String query = "description:( " + terms + ") summary:(" + terms +") attachment_name:(" + terms + ")" ;
@@ -111,8 +113,8 @@ public class Spiceworks_Archive_Logic
         {
             return tickets_With_Attachments;
         }
-        
-        System.out.println(query);
+        submited_Query.setText(query);
+        //System.out.println(query);
         return searchIndex(query);
     }
 
