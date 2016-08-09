@@ -25,6 +25,7 @@ package spiceworks_archive_javafx;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 
 /**
  *
@@ -35,21 +36,19 @@ import javafx.beans.property.SimpleBooleanProperty;
 public class Ticket
 {
 
-    private final SimpleStringProperty id;
+    private final SimpleIntegerProperty id;
     private final SimpleStringProperty summary;
     private final SimpleStringProperty description;
-    private final SimpleStringProperty first_Name;
-    private final SimpleStringProperty last_Name;
+    private final SimpleStringProperty technician_Name;
     private final SimpleStringProperty attachment_Name;
     private final SimpleBooleanProperty has_Attachment;
 
     public Ticket(String id, String summary, String description, String first_Name, String last_Name, String attachment_Name)
     {
-        this.id = new SimpleStringProperty(id);
+        this.id = new SimpleIntegerProperty(Integer.parseInt(id));
         this.summary = new SimpleStringProperty(summary);
         this.description = new SimpleStringProperty(description);
-        this.first_Name = new SimpleStringProperty(first_Name);
-        this.last_Name = new SimpleStringProperty(last_Name);
+        this.technician_Name = new SimpleStringProperty(first_Name + " " + last_Name);
         this.attachment_Name = new SimpleStringProperty(attachment_Name);
 
         if (attachment_Name == null || attachment_Name.equalsIgnoreCase(""))
@@ -63,19 +62,14 @@ public class Ticket
 
     }
 
-    public String getId()
+    public int getId()
     {
         return id.get();
     }
 
-    public String getFirst_Name()
+    public String getTechnician_Name()
     {
-        return first_Name.get();
-    }
-
-    public String getLast_Name()
-    {
-        return last_Name.get();
+        return technician_Name.get();
     }
 
     public String getSummary()

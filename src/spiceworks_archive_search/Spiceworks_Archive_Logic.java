@@ -25,6 +25,7 @@ package spiceworks_archive_search;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
+//import javafx.scene.control.TextField;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -70,16 +71,26 @@ public class Spiceworks_Archive_Logic
     private static ObservableList<Ticket> tickets_With_Attachments;
     private static ObservableList<String> ticket_IDs;
     
-    public static final String INDEX_PATH = "H:\\Spiceworks_Archive_Database\\INDEX";
+    public static final String INDEX_PATH = "C:\\Spiceworks_Archive\\INDEX";
     public static final File INDEX_DIRECTORY = new File(INDEX_PATH);
     private static final int MAX_HITS = 10000;
     private static boolean has_Attachment = false;
+    
+    private javafx.scene.control.TextField message_Box;
 
     public Spiceworks_Archive_Logic()
     {
+
         data_Layer = new Spiceworks_Archive_Data();
     }
 
+    public void setMessageBox(javafx.scene.control.TextField message_Box)
+    {
+        
+            this.message_Box = message_Box;
+
+    }
+    
     public void toggleAttachmentQuery()
     {
         if(has_Attachment)
@@ -91,7 +102,7 @@ public class Spiceworks_Archive_Logic
             has_Attachment = true;
         }
     }
-    public ObservableList<Ticket> search(String terms,String technician, Tooltip submited_Query)
+    public ObservableList<Ticket> search(String terms,String technician)
     {
         String[] first_Last = technician.split("[ ]");
         String query = "description:( " + terms + ") summary:(" + terms +") attachment_name:(" + terms + ")" ;
@@ -107,14 +118,16 @@ public class Spiceworks_Archive_Logic
         }
         else if(terms.trim().length() == 0 && has_Attachment == false)
         {
+            message_Box.setText("");
             return tickets;
         }
         else if(terms.trim().length() == 0 && has_Attachment == true)
         {
+            message_Box.setText("");
             return tickets_With_Attachments;
         }
-        submited_Query.setText(query);
-        //System.out.println(query);
+        
+        message_Box.setText("Search: "+ query);
         return searchIndex(query);
     }
 
@@ -284,7 +297,9 @@ public class Spiceworks_Archive_Logic
             TopDocs topDocs = collector.topDocs();
 
             ScoreDoc[] hits = topDocs.scoreDocs;
-            System.out.println(hits.length + " Record(s) Found");
+            message_Box.setText( message_Box.getText() + ", Record(s) Found: "+ hits.length);
+           
+            
 
             for (int i = 0; i < hits.length; i++)
             {

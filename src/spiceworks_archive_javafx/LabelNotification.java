@@ -20,7 +20,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
-
  */
 package spiceworks_archive_javafx;
 
@@ -32,7 +31,8 @@ import javafx.application.Preloader.PreloaderNotification;
  */
 public class LabelNotification implements PreloaderNotification
 {
-    private String label;
+    private final String label;
+    
     public LabelNotification(String label)
     {
         this.label = label;

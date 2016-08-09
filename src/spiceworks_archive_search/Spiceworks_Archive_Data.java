@@ -41,7 +41,7 @@ public class Spiceworks_Archive_Data
     private static final String TICKET_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments";
     private static final String LUCENE_INDEX_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments";
     private static final String TECHNICIAN_QUERY = "select first_name,last_name from admins";
-    private static final String DATABASE_CONNECTION = "jdbc:SQLite:H:\\Spiceworks_Archive_Database\\spiceworks_prod.db";
+    private static final String DATABASE_CONNECTION = "jdbc:SQLite:C:\\Spiceworks_Archive\\DATABASE\\spiceworks_prod.db";
     private static Connection database_Connection;
     private static Properties connection_Properties;
 

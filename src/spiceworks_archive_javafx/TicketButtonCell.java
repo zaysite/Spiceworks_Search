@@ -46,26 +46,17 @@ public class TicketButtonCell extends TableCell<Ticket, Boolean>
 {
 
     // a button for adding a new person.
-    final Button addButton = new Button("Spiceworks Link");
+    final Button link_Button = new Button("Spiceworks Link");
     // pads and centers the add button in the cell.
-    final StackPane paddedButton = new StackPane();
+    final StackPane button_Padding = new StackPane();
     // records the y pos of the last button press so that the add person dialog can be shown next to the cell.
     //final DoubleProperty buttonY = new SimpleDoubleProperty();
 
     public TicketButtonCell(Stage stage, TableView ticket_View)
     {
-        paddedButton.setPadding(new Insets(3));
-        paddedButton.getChildren().add(addButton);
-        addButton.setOnMousePressed(new EventHandler<MouseEvent>()
-        {
-            @Override
-            public void handle(MouseEvent mouseEvent)
-            {
-                System.out.println("Clicked");
-            }
-
-        });
-        addButton.setOnAction(new EventHandler<ActionEvent>()
+        button_Padding.setPadding(new Insets(3));
+        button_Padding.getChildren().add(link_Button);
+        link_Button.setOnAction(new EventHandler<ActionEvent>()
         {
             @Override
             public void handle(ActionEvent actionEvent)
@@ -75,7 +66,7 @@ public class TicketButtonCell extends TableCell<Ticket, Boolean>
                 URI uri;
                 try
                 {
-                    uri = new URI("http://CityHelpDesk/tickets/list/single_ticket/" + current.getId());
+                    uri = new URI("http://CityHelpDesk/tickets/list/single_ticket/" +  String.valueOf(current.getId()));
                     Desktop dt = Desktop.getDesktop();
                     dt.browse(uri.resolve(uri));
                 }
@@ -94,7 +85,7 @@ public class TicketButtonCell extends TableCell<Ticket, Boolean>
     }
 
     /**
-     * places an add button in the row only if the row is not empty.
+     * places a button in the row only if the row is not empty.
      */
     @Override
     protected void updateItem(Boolean item, boolean empty)
@@ -103,7 +94,7 @@ public class TicketButtonCell extends TableCell<Ticket, Boolean>
         if (!empty)
         {
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-            setGraphic(paddedButton);
+            setGraphic(button_Padding);
         }
         else
         {

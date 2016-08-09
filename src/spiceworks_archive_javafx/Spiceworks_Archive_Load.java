@@ -52,6 +52,10 @@ public class Spiceworks_Archive_Load extends Preloader
     private final int HEIGHT = 350;
     private final int WIDTH = 520;
     
+    /**
+     * 
+     * @return 
+     */
     private Scene createPreloaderScene()
     {
         title_Label = new Label("Welcome to Jordans Spicework Ticket Search");
