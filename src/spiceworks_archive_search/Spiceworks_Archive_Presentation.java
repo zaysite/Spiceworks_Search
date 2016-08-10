@@ -51,6 +51,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TableView;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
@@ -67,7 +69,7 @@ import spiceworks_archive_javafx.LabelNotification;
 import spiceworks_archive_javafx.Spiceworks_Archive_Load;
 import spiceworks_archive_javafx.Ticket;
 import spiceworks_archive_javafx.TicketButtonCell;
-import spiceworks_archive_search.Spiceworks_Archive_Logic;
+
 
 /**
  *
@@ -95,6 +97,7 @@ public class Spiceworks_Archive_Presentation extends Application
             notifyPreloader(new LabelNotification("...Loading..."));
             Thread.sleep(300);
             logic_Layer = new Spiceworks_Archive_Logic();
+            logic_Layer.checkTables();
             
             notifyPreloader(new ProgressNotification(0.25));
             notifyPreloader(new LabelNotification("...Retrieving Tickets..."));
@@ -123,6 +126,16 @@ public class Spiceworks_Archive_Presentation extends Application
     public void start(Stage mainStage)
     {
 
+        TabPane primary_Tab_Pane = new TabPane();
+        Tab ticket_Tab = new Tab("TICKET SEARCH");
+        Tab knowledgebase_Tab = new Tab("KNOWLEDGEBASE SEARCH");
+        Tab software_Library_Tab = new Tab("SOFTWARE LIBRARY");
+        ticket_Tab.setClosable(false);
+        ticket_Tab.setStyle("-fx-background-color: skyblue; -fx-color: deepskyblue; ");
+        knowledgebase_Tab.setStyle("-fx-background-color: deepskyblue;");
+        knowledgebase_Tab.setClosable(false);
+        software_Library_Tab.setClosable(false);
+        
         //CREATE BORDERPANES:
         BorderPane primary_Border_Pane = new BorderPane();
         BorderPane right_Border_Pane = new BorderPane();
@@ -137,9 +150,11 @@ public class Spiceworks_Archive_Presentation extends Application
         split_Pane.setDividerPositions(0.8);
         
         //SETUP MAIN SCENE BORDERPANE:
+        ticket_Tab.setContent(split_Pane);
+        primary_Tab_Pane.getTabs().addAll(ticket_Tab,knowledgebase_Tab,software_Library_Tab);
         VBox toolbar = createToolbar();
         primary_Border_Pane.setBottom(toolbar);
-        primary_Border_Pane.setCenter(split_Pane);
+        primary_Border_Pane.setCenter(primary_Tab_Pane);
        
 
         Scene scene = new Scene(primary_Border_Pane, 1050, 500);

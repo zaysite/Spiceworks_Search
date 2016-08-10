@@ -57,7 +57,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import spiceworks_archive_javafx.Ticket;
 
-
 /**
  *
  * @author it.student
@@ -70,12 +69,12 @@ public class Spiceworks_Archive_Logic
     private static ObservableList<Ticket> tickets;
     private static ObservableList<Ticket> tickets_With_Attachments;
     private static ObservableList<String> ticket_IDs;
-    
+
     public static final String INDEX_PATH = "C:\\Spiceworks_Archive\\INDEX";
     public static final File INDEX_DIRECTORY = new File(INDEX_PATH);
     private static final int MAX_HITS = 10000;
     private static boolean has_Attachment = false;
-    
+
     private javafx.scene.control.TextField message_Box;
 
     public Spiceworks_Archive_Logic()
@@ -84,16 +83,22 @@ public class Spiceworks_Archive_Logic
         data_Layer = new Spiceworks_Archive_Data();
     }
 
+    public void checkTables()
+    {
+        data_Layer.CheckViewsExist();
+    }
+
+
     public void setMessageBox(javafx.scene.control.TextField message_Box)
     {
-        
-            this.message_Box = message_Box;
+
+        this.message_Box = message_Box;
 
     }
-    
+
     public void toggleAttachmentQuery()
     {
-        if(has_Attachment)
+        if (has_Attachment)
         {
             has_Attachment = false;
         }
@@ -102,32 +107,33 @@ public class Spiceworks_Archive_Logic
             has_Attachment = true;
         }
     }
-    public ObservableList<Ticket> search(String terms,String technician)
+
+    public ObservableList<Ticket> search(String terms, String technician)
     {
         String[] first_Last = technician.split("[ ]");
-        String query = "description:( " + terms + ") summary:(" + terms +") attachment_name:(" + terms + ")" ;
-        if(first_Last.length == 2)
+        String query = "description:( " + terms + ") summary:(" + terms + ") attachment_name:(" + terms + ")";
+        if (first_Last.length == 2)
         {
-            query = "(description:(" + terms + ") summary:(" + terms + ") attachment_name:(" + terms + ")) AND (first_name:\"" + first_Last[0] + "\" AND last_name:\""+ first_Last[1] +"\")";
-            
+            query = "(description:(" + terms + ") summary:(" + terms + ") attachment_name:(" + terms + ")) AND (first_name:\"" + first_Last[0] + "\" AND last_name:\"" + first_Last[1] + "\")";
+
         }
-        
-        if(first_Last.length == 2 && terms.trim().length() == 0)
+
+        if (first_Last.length == 2 && terms.trim().length() == 0)
         {
-            query = "(first_name:\"" + first_Last[0] + "\" AND last_name:\""+ first_Last[1] +"\")";
+            query = "(first_name:\"" + first_Last[0] + "\" AND last_name:\"" + first_Last[1] + "\")";
         }
-        else if(terms.trim().length() == 0 && has_Attachment == false)
+        else if (terms.trim().length() == 0 && has_Attachment == false)
         {
             message_Box.setText("");
             return tickets;
         }
-        else if(terms.trim().length() == 0 && has_Attachment == true)
+        else if (terms.trim().length() == 0 && has_Attachment == true)
         {
             message_Box.setText("");
             return tickets_With_Attachments;
         }
-        
-        message_Box.setText("Search: "+ query);
+
+        message_Box.setText("Search: " + query);
         return searchIndex(query);
     }
 
@@ -144,7 +150,7 @@ public class Spiceworks_Archive_Logic
             while (technicians.next())
             {
                 String first_Name = technicians.getString("first_name");
-                String last_Name = technicians.getString("last_name");
+                String last_Name = technicians.getString("last_name");             
                 technician_Observable_List.add(first_Name + " " + last_Name);
             }
 
@@ -165,7 +171,7 @@ public class Spiceworks_Archive_Logic
     {
         tickets = FXCollections.observableArrayList();
         ticket_IDs = FXCollections.observableArrayList();
-        tickets_With_Attachments  = FXCollections.observableArrayList();
+        tickets_With_Attachments = FXCollections.observableArrayList();
         ResultSet database_Results;
         try
         {
@@ -182,13 +188,24 @@ public class Spiceworks_Archive_Logic
                     String first_Name = database_Results.getString("first_name");
                     String last_Name = database_Results.getString("last_name");
                     String attachment_Name = database_Results.getString("attachment_name");
-                    tickets.add(new Ticket(id, summary, description, first_Name, last_Name, attachment_Name));
-                    if(attachment_Name != null)
+
+                    int duplicate_Ticket = ticket_IDs.indexOf(id);
+                    if (duplicate_Ticket == -1)
                     {
-                        tickets_With_Attachments.add(new Ticket(id, summary, description, first_Name, last_Name, attachment_Name));
+                        Ticket current_Ticket = new Ticket(id, summary, description, first_Name, last_Name, attachment_Name);
+                        tickets.add(current_Ticket);
+                        if (attachment_Name != null)
+                        {
+                            tickets_With_Attachments.add(current_Ticket);
+                        }
+                        ticket_IDs.add(id);
                     }
-                    
-                    ticket_IDs.add(database_Results.getString("id"));
+                    else
+                    {
+                        tickets.get(duplicate_Ticket).addAttachment_Name(attachment_Name);
+
+                    }
+
                 }
 
             }
@@ -220,14 +237,14 @@ public class Spiceworks_Archive_Logic
                 }
                 catch (Spiceworks_Archive_Exception | SQLException ex)
                 {
-                    
+
                 }
                 System.out.println("Total Records Indexed: " + index_Document_Count);
 
             }
             catch (IOException ex)
             {
-                
+
             }
             return true;
         }
@@ -242,27 +259,42 @@ public class Spiceworks_Archive_Logic
         {
             Document index_Document = new Document();
             //"select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments"
-            FieldType type = new FieldType();
-            type.setStored(true);
-            type.setIndexOptions(IndexOptions.NONE);
 
-            index_Document.add(new StoredField("id", database_Results.getInt("id")));
+            int id = database_Results.getInt("id");
             String summary = database_Results.getString("summary");
-            if(summary == null)
+            String first_name = database_Results.getString("first_name");
+            String last_name = database_Results.getString("last_name");
+            String description = database_Results.getString("description");
+            String attachment_Name = database_Results.getString("attachment_name");
+
+            if (summary == null)
             {
                 summary = "";
             }
-            index_Document.add(new TextField("summary", summary, Field.Store.YES));
-            index_Document.add(new TextField("description", database_Results.getString("description"), Field.Store.YES));
-            index_Document.add(new TextField("first_name", database_Results.getString("first_name"), Field.Store.YES));
-            index_Document.add(new TextField("last_name", database_Results.getString("last_name"), Field.Store.YES));
-            String attachment_Name = database_Results.getString("attachment_name");
-
+            if (first_name == null)
+            {
+                first_name = "";
+            }
+            if (last_name == null)
+            {
+                last_name = "";
+            }
+            if (description == null)
+            {
+                description = "";
+            }
             if (attachment_Name == null)
             {
                 attachment_Name = "";
             }
+
+            index_Document.add(new StoredField("id", id));
+            index_Document.add(new TextField("summary", summary, Field.Store.YES));
+            index_Document.add(new TextField("description", description, Field.Store.YES));
+            index_Document.add(new TextField("first_name", first_name, Field.Store.YES));
+            index_Document.add(new TextField("last_name", last_name, Field.Store.YES));
             index_Document.add(new TextField("attachment_name", attachment_Name, Field.Store.YES));
+
             index_Writer.addDocument(index_Document);
             document_Count++;
 
@@ -297,9 +329,7 @@ public class Spiceworks_Archive_Logic
             TopDocs topDocs = collector.topDocs();
 
             ScoreDoc[] hits = topDocs.scoreDocs;
-            message_Box.setText( message_Box.getText() + ", Record(s) Found: "+ hits.length);
-           
-            
+            message_Box.setText(message_Box.getText() + ", Record(s) Found: " + hits.length);
 
             for (int i = 0; i < hits.length; i++)
             {
@@ -309,22 +339,21 @@ public class Spiceworks_Archive_Logic
                 Document d = searcher.doc(docId);
                 int index = ticket_IDs.indexOf(d.get("id"));
                 Ticket current = tickets.get(index);
-                if(has_Attachment)
+                if (ticket_List.indexOf(current) == -1)
                 {
-                    if(current.hasAttachment())
+                    if (has_Attachment)
+                    {
+                        if (current.hasAttachment())
+                        {
+                            ticket_List.add(current);
+                        }
+
+                    }
+                    else
                     {
                         ticket_List.add(current);
                     }
-                    
                 }
-                else
-                {
-                    ticket_List.add(current);
-                }
-                
-                
-                //System.out.println("\"ID:\" " + d.get("id") + ", \"Summary:\" " + d.get("summary") + ", \"Description:\" " + d.get("description"));
-
             }
 
             if (hits.length == 0)
@@ -337,7 +366,7 @@ public class Spiceworks_Archive_Logic
         }
         catch (IOException | ParseException ex)
         {
-            
+
         }
         return ticket_List;
     }

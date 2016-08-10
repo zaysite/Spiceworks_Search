@@ -45,12 +45,16 @@ public class Ticket
 
     public Ticket(String id, String summary, String description, String first_Name, String last_Name, String attachment_Name)
     {
+        if (first_Name == null)
+        {
+            first_Name = "UNASSIGNED";
+            last_Name = "TICKET";
+        }
         this.id = new SimpleIntegerProperty(Integer.parseInt(id));
         this.summary = new SimpleStringProperty(summary);
         this.description = new SimpleStringProperty(description);
         this.technician_Name = new SimpleStringProperty(first_Name + " " + last_Name);
         this.attachment_Name = new SimpleStringProperty(attachment_Name);
-
         if (attachment_Name == null || attachment_Name.equalsIgnoreCase(""))
         {
             this.has_Attachment = new SimpleBooleanProperty(false);
@@ -81,6 +85,11 @@ public class Ticket
     {
         return description.get();
 
+    }
+
+    public void addAttachment_Name(String attachment)
+    {
+        attachment_Name.set(attachment_Name.get() + " , " + attachment);
     }
 
     public String getAttachment_Name()
