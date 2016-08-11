@@ -41,6 +41,7 @@ public class Spiceworks_Archive_Data
 {
 
     private static final String TICKET_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_view;";
+    private static final String SOFTWARE_QUERY = "select category,serial_number,library_id,note,status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at,created_on from software;";
     private static final String LUCENE_INDEX_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_view;";
     private static final String TECHNICIAN_QUERY = "select first_name,last_name from admin_view;";
     
@@ -51,11 +52,16 @@ public class Spiceworks_Archive_Data
     private static final String VIEW_EXISTS_TICKET_VIEW = "SELECT name FROM sqlite_master where type='view' AND name='ticket_view'";
     private static final String VIEW_EXISTS_KNOWLEDGEBASE_VIEW = "SELECT name FROM sqlite_master where type='view' AND name='ticket_view'";
     private static final String VIEW_EXISTS_ADMIN_VIEW = "SELECT name FROM sqlite_master where type='view' AND name='admin_view'";
-            
-    private static final String DATABASE_CONNECTION = "jdbc:SQLite:C:\\Spiceworks_Archive\\DATABASE\\spiceworks_prod.db";
-    private static Connection database_Connection;
-    private static Properties connection_Properties;
-
+    private static final String CREATE_SOFTWARE_VIEW = "SELECT devices.id,devices.name,devices.manufacturer,devices.model,devices.serial_number,devices.created_on notes.body FROM devices left join notes on devices.id=notes.noteable_id where user_tag='|software library|'";
+    String t = "CREATE VIEW software_view AS SELECT devices.id,devices.name,devices.manufacturer,devices.model,devices.serial_number,devices.created_on, notes.body FROM devices left join notes on devices.id=notes.noteable_id where user_tag='|software library|'";
+    
+    
+    private static final String SPICEWORKS_DATABASE_URL = "jdbc:SQLite:C:\\Spiceworks_Archive\\DATABASE\\spiceworks_prod.db";
+    private static final String SOFTWARE_DATABASE_URL = "jdbc:SQLite:C:\\Spiceworks_Archive\\DATABASE\\Software_Library.db";
+    private static Connection spiceworks_Database_Connection;
+    private static Connection software_Database_Connection;
+    private static Properties spiceworks_Connection_Properties;
+    private static Properties software_Connection_Properties;
     public Spiceworks_Archive_Data()
     {
         CreateDatabaseConnection();
@@ -68,14 +74,27 @@ public class Spiceworks_Archive_Data
         try
         {
             //spiceworks_prod.db does not require any permissions so connection_Properties is empty.
-            connection_Properties = new Properties();
+            spiceworks_Connection_Properties = new Properties();
             //create a connection to the sqlite database.
-            database_Connection = DriverManager.getConnection(DATABASE_CONNECTION, connection_Properties);
+            spiceworks_Database_Connection = DriverManager.getConnection(SPICEWORKS_DATABASE_URL, spiceworks_Connection_Properties);
 
         }
         catch (SQLException ex)
         {
-            System.err.println("COULD NOT CONNECT TO DATABASE");
+            System.err.println("COULD NOT CONNECT TO SPICEWORKS DATABASE");
+        }
+        
+        try
+        {
+            //spiceworks_prod.db does not require any permissions so connection_Properties is empty.
+            software_Connection_Properties = new Properties();
+            //create a connection to the sqlite database.
+            software_Database_Connection = DriverManager.getConnection(SOFTWARE_DATABASE_URL, software_Connection_Properties);
+
+        }
+        catch (SQLException ex)
+        {
+            System.err.println("COULD NOT CONNECT TO SOFTWARE DATABASE");
         }
     }
     
@@ -102,7 +121,7 @@ public class Spiceworks_Archive_Data
         
         try
         {
-            ResultSet results = QueryDatabase(query);  
+            ResultSet results = QuerySpiceworksDatabase(query);  
             while(results.next())
             {
                 
@@ -130,7 +149,7 @@ public class Spiceworks_Archive_Data
         try
         {
             Statement database_Query;
-            database_Query = database_Connection.createStatement();
+            database_Query = spiceworks_Database_Connection.createStatement();
             
             int result = database_Query.executeUpdate(create_Query);
         }
@@ -140,7 +159,7 @@ public class Spiceworks_Archive_Data
         }
     }
     
-    private ResultSet QueryDatabase(String select_Query)
+    private ResultSet QuerySpiceworksDatabase(String select_Query)
     {
         System.out.println(select_Query);
         ResultSet statement_Results = null;
@@ -149,7 +168,28 @@ public class Spiceworks_Archive_Data
 
             Statement database_Query;
 
-            database_Query = database_Connection.createStatement();
+            database_Query = spiceworks_Database_Connection.createStatement();
+
+            statement_Results = database_Query.executeQuery(select_Query);
+
+        }
+        catch (SQLException ex)
+        {
+            System.err.println(ex.getMessage());
+        }
+        return statement_Results;
+    }
+    
+    private ResultSet QuerySoftwareDatabase(String select_Query)
+    {
+        System.out.println(select_Query);
+        ResultSet statement_Results = null;
+        try
+        {
+
+            Statement database_Query;
+
+            database_Query = software_Database_Connection.createStatement();
 
             statement_Results = database_Query.executeQuery(select_Query);
 
@@ -168,7 +208,7 @@ public class Spiceworks_Archive_Data
      */
     public ResultSet getTechnicians() throws Spiceworks_Archive_Exception
     {
-        ResultSet database_Response = QueryDatabase(TECHNICIAN_QUERY);
+        ResultSet database_Response = QuerySpiceworksDatabase(TECHNICIAN_QUERY);
 
         if (database_Response == null)
         {
@@ -180,10 +220,19 @@ public class Spiceworks_Archive_Data
 
     public ResultSet getTickets() throws Spiceworks_Archive_Exception
     {
-        ResultSet database_Response = QueryDatabase(TICKET_QUERY);
+        ResultSet database_Response = QuerySpiceworksDatabase(TICKET_QUERY);
         if (database_Response == null)
         {
             throw new Spiceworks_Archive_Exception("ERROR TICKETS COULD NOT BE RETURNED!");
+        }
+        return database_Response;
+    }
+    public ResultSet getSoftware() throws Spiceworks_Archive_Exception
+    {
+        ResultSet database_Response = QuerySoftwareDatabase(SOFTWARE_QUERY);
+        if (database_Response == null)
+        {
+            throw new Spiceworks_Archive_Exception("ERROR SOFTWARE COULD NOT BE RETURNED!");
         }
         return database_Response;
     }
@@ -210,7 +259,7 @@ public class Spiceworks_Archive_Data
     public ResultSet getLuceneIndexResults() throws Spiceworks_Archive_Exception
     {
         
-        ResultSet database_Response = QueryDatabase(LUCENE_INDEX_QUERY);
+        ResultSet database_Response = QuerySpiceworksDatabase(LUCENE_INDEX_QUERY);
 
         if (database_Response == null)
         {

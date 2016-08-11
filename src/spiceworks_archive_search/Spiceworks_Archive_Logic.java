@@ -55,6 +55,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import spiceworks_archive_javafx.Software;
 import spiceworks_archive_javafx.Ticket;
 
 /**
@@ -69,6 +70,8 @@ public class Spiceworks_Archive_Logic
     private static ObservableList<Ticket> tickets;
     private static ObservableList<Ticket> tickets_With_Attachments;
     private static ObservableList<String> ticket_IDs;
+
+    private static ObservableList<Software> software;
 
     public static final String INDEX_PATH = "C:\\Spiceworks_Archive\\INDEX";
     public static final File INDEX_DIRECTORY = new File(INDEX_PATH);
@@ -87,7 +90,6 @@ public class Spiceworks_Archive_Logic
     {
         data_Layer.CheckViewsExist();
     }
-
 
     public void setMessageBox(javafx.scene.control.TextField message_Box)
     {
@@ -150,7 +152,7 @@ public class Spiceworks_Archive_Logic
             while (technicians.next())
             {
                 String first_Name = technicians.getString("first_name");
-                String last_Name = technicians.getString("last_name");             
+                String last_Name = technicians.getString("last_name");
                 technician_Observable_List.add(first_Name + " " + last_Name);
             }
 
@@ -217,6 +219,44 @@ public class Spiceworks_Archive_Logic
         }
 
         return tickets;
+    }
+
+    public ObservableList<Software> getSoftware()
+    {
+        software = FXCollections.observableArrayList();
+        ResultSet database_Results;
+        try
+        {
+
+            database_Results = data_Layer.getSoftware();
+            if (database_Results != null)
+            {
+                while (database_Results.next())
+                {
+                    String category = database_Results.getString("category");
+                    String serial_Number = database_Results.getString("serial_Number");
+                    String library_ID = database_Results.getString("library_ID");
+                    String created_on = database_Results.getString("created_on");
+                    String note = database_Results.getString("note");
+                    String status = database_Results.getString("status");
+                    String checked_out_by = database_Results.getString("checked_out_by");
+                    String checked_out_at = database_Results.getString("checked_out_at");
+                    String last_checked_out_by = database_Results.getString("last_checked_out_by");
+                    String last_checked_out_at = database_Results.getString("last_checked_out_at");
+
+                    Software current_Software = new Software(category, serial_Number, library_ID, created_on, note, status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at);
+                    software.add(current_Software);
+
+                }
+
+            }
+
+        }
+        catch (Spiceworks_Archive_Exception | SQLException ex)
+        {
+            Logger.getLogger(Spiceworks_Archive_Logic.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return software;
     }
 
     public boolean createLuceneIndexes()
@@ -329,8 +369,8 @@ public class Spiceworks_Archive_Logic
             TopDocs topDocs = collector.topDocs();
 
             ScoreDoc[] hits = topDocs.scoreDocs;
-            message_Box.setText(message_Box.getText() + ", Record(s) Found: " + hits.length);
 
+            int ticket_Count = 0;
             for (int i = 0; i < hits.length; i++)
             {
 
@@ -343,23 +383,26 @@ public class Spiceworks_Archive_Logic
                 {
                     if (has_Attachment)
                     {
+
                         if (current.hasAttachment())
                         {
+                            ticket_Count++;
                             ticket_List.add(current);
                         }
 
                     }
                     else
                     {
+                        ticket_Count++;
                         ticket_List.add(current);
                     }
                 }
             }
-
+            message_Box.setText(message_Box.getText() + ", Record(s) Found: " + ticket_Count);
             if (hits.length == 0)
             {
 
-                System.out.println("No Data Founds ");
+                System.out.println("No Data Founds");
 
             }
 
