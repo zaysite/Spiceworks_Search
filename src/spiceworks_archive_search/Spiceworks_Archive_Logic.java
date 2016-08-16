@@ -28,10 +28,12 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.Collator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.scene.control.Label;
 //import javafx.scene.control.TextField;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
@@ -72,7 +74,8 @@ public class Spiceworks_Archive_Logic
     private static ObservableList<String> ticket_IDs;
 
     private static ObservableList<Software> software;
-
+    private static ObservableList<String> software_IDs;
+    
     public static final String INDEX_PATH = "C:\\Spiceworks_Archive\\INDEX";
     public static final File INDEX_DIRECTORY = new File(INDEX_PATH);
     private static final int MAX_HITS = 10000;
@@ -168,6 +171,39 @@ public class Spiceworks_Archive_Logic
 
         return technician_Observable_List;
     }
+    
+    public ObservableList<String> getCategories()
+    {
+        ObservableList<String> category_Observable_List = FXCollections.observableArrayList();
+        try
+        {
+            
+            ResultSet categories = data_Layer.getSoftwareCategories();
+
+            //The first value in the list should be blank incase we dont want to search based on a name.
+            
+            while (categories.next())
+            {
+                String category_Name = categories.getString("library_category");
+                category_Observable_List.add(category_Name);
+            }
+
+        }
+        catch (Spiceworks_Archive_Exception ex)
+        {
+            System.err.println(ex.getMessage());
+        }
+        catch (SQLException ex)
+        {
+            System.err.println("TECHNICIAN FIELD COULD NOT BE ACCESSED: " + ex.getMessage());
+        }
+ 
+        category_Observable_List = new SortedList<>(category_Observable_List, Collator.getInstance());
+        ObservableList<String> sorted_List = FXCollections.observableArrayList();
+        sorted_List.addAll(category_Observable_List);
+
+        return sorted_List;
+    }
 
     public ObservableList<Ticket> getTickets()
     {
@@ -224,6 +260,8 @@ public class Spiceworks_Archive_Logic
     public ObservableList<Software> getSoftware()
     {
         software = FXCollections.observableArrayList();
+        software_IDs = FXCollections.observableArrayList();
+        
         ResultSet database_Results;
         try
         {
@@ -233,6 +271,7 @@ public class Spiceworks_Archive_Logic
             {
                 while (database_Results.next())
                 {
+                    String id = database_Results.getString("id");
                     String category = database_Results.getString("category");
                     String serial_Number = database_Results.getString("serial_Number");
                     String library_ID = database_Results.getString("library_ID");
@@ -245,6 +284,7 @@ public class Spiceworks_Archive_Logic
                     String last_checked_out_at = database_Results.getString("last_checked_out_at");
 
                     Software current_Software = new Software(category, serial_Number, library_ID, created_on, note, status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at);
+                    software_IDs.add(id);
                     software.add(current_Software);
 
                 }

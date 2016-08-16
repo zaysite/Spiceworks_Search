@@ -41,7 +41,8 @@ public class Spiceworks_Archive_Data
 {
 
     private static final String TICKET_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_view;";
-    private static final String SOFTWARE_QUERY = "select category,serial_number,library_id,note,status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at,created_on from software;";
+    private static final String SOFTWARE_QUERY = "select id, category,serial_number,library_id,note,status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at,created_on,library_category from software_categories;";
+    private static final String SOFTWARE_CATEGORY_QUERY = "select distinct library_category from categories;";
     private static final String LUCENE_INDEX_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_view;";
     private static final String TECHNICIAN_QUERY = "select first_name,last_name from admin_view;";
     
@@ -52,8 +53,6 @@ public class Spiceworks_Archive_Data
     private static final String VIEW_EXISTS_TICKET_VIEW = "SELECT name FROM sqlite_master where type='view' AND name='ticket_view'";
     private static final String VIEW_EXISTS_KNOWLEDGEBASE_VIEW = "SELECT name FROM sqlite_master where type='view' AND name='ticket_view'";
     private static final String VIEW_EXISTS_ADMIN_VIEW = "SELECT name FROM sqlite_master where type='view' AND name='admin_view'";
-    private static final String CREATE_SOFTWARE_VIEW = "SELECT devices.id,devices.name,devices.manufacturer,devices.model,devices.serial_number,devices.created_on notes.body FROM devices left join notes on devices.id=notes.noteable_id where user_tag='|software library|'";
-    String t = "CREATE VIEW software_view AS SELECT devices.id,devices.name,devices.manufacturer,devices.model,devices.serial_number,devices.created_on, notes.body FROM devices left join notes on devices.id=notes.noteable_id where user_tag='|software library|'";
     
     
     private static final String SPICEWORKS_DATABASE_URL = "jdbc:SQLite:C:\\Spiceworks_Archive\\DATABASE\\spiceworks_prod.db";
@@ -201,6 +200,18 @@ public class Spiceworks_Archive_Data
         return statement_Results;
     }
 
+    public ResultSet getSoftwareCategories() throws Spiceworks_Archive_Exception
+    {
+        ResultSet database_Response = QuerySoftwareDatabase(SOFTWARE_CATEGORY_QUERY);
+        
+        if (database_Response == null)
+        {
+            throw new Spiceworks_Archive_Exception("ERROR CATEGORIES COULD NOT BE RETURNED!");
+        }
+        
+        return database_Response;
+    }
+    
     /**
      *
      * @return ResultSet Technicians
