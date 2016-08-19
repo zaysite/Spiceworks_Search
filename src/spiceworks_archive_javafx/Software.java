@@ -33,50 +33,55 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class Software
 {
-
+    private final SimpleStringProperty id;
     private final SimpleStringProperty category;
-    private final SimpleStringProperty serial_Number;
-    private final SimpleStringProperty library_ID;
-    private final SimpleStringProperty created_on;
+    private final SimpleStringProperty serialNumber;
+    private final SimpleStringProperty libraryID;
+    private final SimpleStringProperty createdOn;
     private final SimpleStringProperty note;
     private final SimpleStringProperty status;
-    private final SimpleStringProperty checked_out_by;
-    private final SimpleStringProperty checked_out_at;
-    private final SimpleStringProperty last_checked_out_by;
-    private final SimpleStringProperty last_checked_out_at;
+    private final SimpleStringProperty checkedOutBy;
+    private final SimpleStringProperty checkedOutAt;
+    private final SimpleStringProperty lastCheckedOutBy;
+    private final SimpleStringProperty lastCheckedOutAt;
 
-    public Software( String category, String serial_Number, String library_ID, String created_on, String note, String status, String checked_out_by, String checked_out_at, String last_checked_out_by, String last_checked_out_at)
+    public Software(String id, String category, String serialNumber, String libraryID, String createdOn, String note, String status, String checkedOutBy, String checkedOutAt, String lastCheckedOutBy, String lastCheckedOutAt)
     {
+        this.id = new SimpleStringProperty(id);
         this.category = new SimpleStringProperty(category);
-        this.serial_Number = new SimpleStringProperty(serial_Number);
-        this.library_ID = new SimpleStringProperty(library_ID);
-        this.created_on = new SimpleStringProperty(created_on);
+        this.serialNumber = new SimpleStringProperty(serialNumber);
+        this.libraryID = new SimpleStringProperty(libraryID);
+        this.createdOn = new SimpleStringProperty(createdOn);
         this.note = new SimpleStringProperty(note);
         this.status = new SimpleStringProperty(status);
-        this.checked_out_by = new SimpleStringProperty(checked_out_by);
-        this.checked_out_at = new SimpleStringProperty(checked_out_at);
-        this.last_checked_out_by = new SimpleStringProperty(last_checked_out_by);
-        this.last_checked_out_at = new SimpleStringProperty(last_checked_out_at);
+        this.checkedOutBy = new SimpleStringProperty(checkedOutBy);
+        this.checkedOutAt = new SimpleStringProperty(checkedOutAt);
+        this.lastCheckedOutBy = new SimpleStringProperty(lastCheckedOutBy);
+        this.lastCheckedOutAt = new SimpleStringProperty(lastCheckedOutAt);
     }
 
+    public String getID()
+    {
+        return id.get();
+    }
     public String getCategory()
     {
         return category.get();
     }
 
-    public String getSerial_Number()
+    public String getSerialNumber()
     {
-        return serial_Number.get();
+        return serialNumber.get();
     }
 
-    public String getLibrary_ID()
+    public String getLibraryID()
     {
-        return library_ID.get();
+        return libraryID.get();
     }
 
-    public String getCreated_on()
+    public String getCreatedOn()
     {
-        return created_on.get();
+        return createdOn.get();
     }
 
     public String getNote()
@@ -89,24 +94,141 @@ public class Software
         return status.get();
     }
 
-    public String getChecked_out_by()
+    public String getCheckedOutBy()
     {
-        return checked_out_by.get();
+        return checkedOutBy.get();
     }
 
-    public String getChecked_out_at()
+    public String getCheckedOutAt()
     {
-        return checked_out_at.get();
+        return checkedOutAt.get();
     }
 
-    public String getLast_checked_out_by()
+    public String getLastCheckedOutBy()
     {
-        return last_checked_out_by.get();
+        return lastCheckedOutBy.get();
     }
 
-    public String getLast_checked_out_at()
+    public String getLastCheckedOutAt()
     {
-        return last_checked_out_at.get();
+        return lastCheckedOutAt.get();
+    }
+
+    public void setId(String id)
+    {
+        this.id.set(id);
+    }
+    public void setCategory(String category)
+    {
+        this.category.set(category);
+
+    }
+
+    public void setSerialNumber(String serialNumber)
+    {
+        this.serialNumber.set(serialNumber);
+
+    }
+
+    public void setLibraryID(String libraryID)
+    {
+        this.libraryID.set(libraryID);
+
+    }
+
+    public void setCreatedOn(String createdOn)
+    {
+        this.createdOn.set(createdOn);
+
+    }
+
+    public void setNote(String note)
+    {
+        this.note.set(note);
+
+    }
+
+    public void setStatus(String status)
+    {
+        this.status.set(status);
+
+    }
+
+    public void setCheckedOutBy(String checkedOutBy)
+    {
+        this.checkedOutBy.set(checkedOutBy);
+
+    }
+
+    public void setCheckedOutAt(String checkedOutAt)
+    {
+        this.checkedOutAt.set(checkedOutAt);
+
+    }
+
+    public void setLastCheckedOutBy(String lastCheckedOutBy)
+    {
+        this.lastCheckedOutBy.set(lastCheckedOutBy);
+
+    }
+
+    public void setLastCheckedOutAt(String lastCheckedOutAt)
+    {
+        this.lastCheckedOutAt.set(lastCheckedOutAt);
+    }
+
+    public SimpleStringProperty idProperty()
+    {
+        return id;
+    }
+    public SimpleStringProperty categoryProperty()
+    {
+        return category;
+    }
+
+    public SimpleStringProperty serialNumberProperty()
+    {
+        return serialNumber;
+    }
+
+    public SimpleStringProperty libraryIDProperty()
+    {
+        return libraryID;
+    }
+
+    public SimpleStringProperty createdOnProperty()
+    {
+        return createdOn;
+    }
+
+    public SimpleStringProperty noteProperty()
+    {
+        return note;
+    }
+
+    public SimpleStringProperty statusProperty()
+    {
+        return status;
+    }
+
+    public SimpleStringProperty checkedOutByProperty()
+    {
+        return checkedOutBy;
+    }
+
+    public SimpleStringProperty checkedOutAtProperty()
+    {
+        return checkedOutAt;
+    }
+
+    public SimpleStringProperty lastCheckedOutByProperty()
+    {
+        return lastCheckedOutBy;
+    }
+
+    public SimpleStringProperty lastCheckedOutAtProperty()
+    {
+        return lastCheckedOutAt;
     }
 
 }

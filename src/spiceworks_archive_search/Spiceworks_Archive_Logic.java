@@ -26,6 +26,8 @@ package spiceworks_archive_search;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.Collator;
@@ -34,6 +36,7 @@ import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 //import javafx.scene.control.TextField;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
@@ -69,15 +72,17 @@ public class Spiceworks_Archive_Logic
 
     private static Spiceworks_Archive_Data data_Layer;
 
-    private static ObservableList<Ticket> tickets;
-    private static ObservableList<Ticket> tickets_With_Attachments;
-    private static ObservableList<String> ticket_IDs;
+    private static ObservableList<Ticket> list_Tickets;
+    private static ObservableList<Ticket> list_Tickets_With_Attachments;
+    private static ObservableList<String> list_Ticket_IDs;
 
-    private static ObservableList<Software> software;
-    private static ObservableList<String> software_IDs;
+    private static ObservableList<Software> list_Software;
+    private static ObservableList<String> list_Software_IDs;
     
-    public static final String INDEX_PATH = "C:\\Spiceworks_Archive\\INDEX";
-    public static final File INDEX_DIRECTORY = new File(INDEX_PATH);
+    public static final String TICKET_INDEX_PATH = "C:\\Spiceworks_Archive\\INDEX\\TICKET";
+    public static final String SOFTWARE_INDEX_PATH = "C:\\Spiceworks_Archive\\INDEX\\SOFTWARE";
+    public static final File TICKET_INDEX_DIRECTORY = new File(TICKET_INDEX_PATH);
+    public static final File SOFTWARE_INDEX_DIRECTORY = new File(SOFTWARE_INDEX_PATH);
     private static final int MAX_HITS = 10000;
     private static boolean has_Attachment = false;
 
@@ -113,7 +118,31 @@ public class Spiceworks_Archive_Logic
         }
     }
 
-    public ObservableList<Ticket> search(String terms, String technician)
+    public ObservableList<Software> searchSoftware(String terms, String categories,javafx.scene.control.TextField message_Box)
+    {
+        
+        String query = "(note:(" + terms + ") category:(" + terms + ") serial_number:(" + terms + "))";
+
+        if(terms.trim().length() != 0 && categories.trim().length() != 0)
+        {
+            query = "(note:(" + terms + ") category:(" + terms + ") serial_number:(" + terms + ")) AND (library_category:\"" + categories + "\")";
+        }
+        else if (terms.trim().length() == 0 && categories.trim().length() != 0)
+        {
+            query = "(library_category:\"" + categories + "\")";
+        }
+        else if (terms.trim().length() == 0 && categories.trim().length() == 0)
+        {
+            message_Box.setText("");
+            return list_Software;
+        }
+
+        message_Box.setText("Search: " + query);
+        
+        return searchSoftwareIndex(query,message_Box);
+    }
+    
+    public ObservableList<Ticket> searchTicket(String terms, String technician)
     {
         String[] first_Last = technician.split("[ ]");
         String query = "description:( " + terms + ") summary:(" + terms + ") attachment_name:(" + terms + ")";
@@ -130,16 +159,16 @@ public class Spiceworks_Archive_Logic
         else if (terms.trim().length() == 0 && has_Attachment == false)
         {
             message_Box.setText("");
-            return tickets;
+            return list_Tickets;
         }
         else if (terms.trim().length() == 0 && has_Attachment == true)
         {
             message_Box.setText("");
-            return tickets_With_Attachments;
+            return list_Tickets_With_Attachments;
         }
 
         message_Box.setText("Search: " + query);
-        return searchIndex(query);
+        return searchTicketIndex(query);
     }
 
     public ObservableList<String> getTechnicians()
@@ -207,9 +236,9 @@ public class Spiceworks_Archive_Logic
 
     public ObservableList<Ticket> getTickets()
     {
-        tickets = FXCollections.observableArrayList();
-        ticket_IDs = FXCollections.observableArrayList();
-        tickets_With_Attachments = FXCollections.observableArrayList();
+        list_Tickets = FXCollections.observableArrayList();
+        list_Ticket_IDs = FXCollections.observableArrayList();
+        list_Tickets_With_Attachments = FXCollections.observableArrayList();
         ResultSet database_Results;
         try
         {
@@ -227,20 +256,20 @@ public class Spiceworks_Archive_Logic
                     String last_Name = database_Results.getString("last_name");
                     String attachment_Name = database_Results.getString("attachment_name");
 
-                    int duplicate_Ticket = ticket_IDs.indexOf(id);
+                    int duplicate_Ticket = list_Ticket_IDs.indexOf(id);
                     if (duplicate_Ticket == -1)
                     {
                         Ticket current_Ticket = new Ticket(id, summary, description, first_Name, last_Name, attachment_Name);
-                        tickets.add(current_Ticket);
+                        list_Tickets.add(current_Ticket);
                         if (attachment_Name != null)
                         {
-                            tickets_With_Attachments.add(current_Ticket);
+                            list_Tickets_With_Attachments.add(current_Ticket);
                         }
-                        ticket_IDs.add(id);
+                        list_Ticket_IDs.add(id);
                     }
                     else
                     {
-                        tickets.get(duplicate_Ticket).addAttachment_Name(attachment_Name);
+                        list_Tickets.get(duplicate_Ticket).addAttachment_Name(attachment_Name);
 
                     }
 
@@ -254,13 +283,13 @@ public class Spiceworks_Archive_Logic
             Logger.getLogger(Spiceworks_Archive_Logic.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return tickets;
+        return list_Tickets;
     }
 
     public ObservableList<Software> getSoftware()
     {
-        software = FXCollections.observableArrayList();
-        software_IDs = FXCollections.observableArrayList();
+        list_Software = FXCollections.observableArrayList();
+        list_Software_IDs = FXCollections.observableArrayList();
         
         ResultSet database_Results;
         try
@@ -283,9 +312,9 @@ public class Spiceworks_Archive_Logic
                     String last_checked_out_by = database_Results.getString("last_checked_out_by");
                     String last_checked_out_at = database_Results.getString("last_checked_out_at");
 
-                    Software current_Software = new Software(category, serial_Number, library_ID, created_on, note, status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at);
-                    software_IDs.add(id);
-                    software.add(current_Software);
+                    Software current_Software = new Software(id,category, serial_Number, library_ID, created_on, note, status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at);
+                    list_Software_IDs.add(id);
+                    list_Software.add(current_Software);
 
                 }
 
@@ -296,12 +325,23 @@ public class Spiceworks_Archive_Logic
         {
             Logger.getLogger(Spiceworks_Archive_Logic.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return software;
+        return list_Software;
     }
 
-    public boolean createLuceneIndexes()
+    public boolean createLuceneIndexTicket()
     {
-        if (INDEX_DIRECTORY.listFiles().length <= 0)
+        if(Files.exists(TICKET_INDEX_DIRECTORY.toPath()) == false)
+        {
+            try
+            {
+                Files.createDirectory(TICKET_INDEX_DIRECTORY.toPath());
+            }
+            catch (IOException ex)
+            {
+                Logger.getLogger(Spiceworks_Archive_Logic.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        if (TICKET_INDEX_DIRECTORY.listFiles().length <= 0)
         {
             try
             {
@@ -310,10 +350,10 @@ public class Spiceworks_Archive_Logic
                 IndexWriterConfig index_Writer_Configuration = new IndexWriterConfig(analyzer);
                 int index_Document_Count = 0;
 
-                try (IndexWriter index_Writer = new IndexWriter(FSDirectory.open(INDEX_DIRECTORY.toPath()), index_Writer_Configuration))
+                try (IndexWriter index_Writer = new IndexWriter(FSDirectory.open(TICKET_INDEX_DIRECTORY.toPath()), index_Writer_Configuration))
                 {
-                    System.out.println("Indexing DB to Directory: " + INDEX_DIRECTORY + " ...");
-                    index_Document_Count = indexDocuments(index_Writer);
+                    System.out.println("Indexing DB to Directory: " + TICKET_INDEX_DIRECTORY + " ...");
+                    index_Document_Count = indexTicketDocuments(index_Writer);
                 }
                 catch (Spiceworks_Archive_Exception | SQLException ex)
                 {
@@ -328,12 +368,56 @@ public class Spiceworks_Archive_Logic
             }
             return true;
         }
+        
+        return false;
+    }
+    public boolean createLuceneIndexSoftware()
+    {
+        if(Files.exists(SOFTWARE_INDEX_DIRECTORY.toPath()) == false)
+        {
+            try
+            {
+                Files.createDirectory(SOFTWARE_INDEX_DIRECTORY.toPath());
+            }
+            catch (IOException ex)
+            {
+                Logger.getLogger(Spiceworks_Archive_Logic.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        if (SOFTWARE_INDEX_DIRECTORY.listFiles().length <= 0)
+        {
+            try
+            {
+                SimpleAnalyzer analyzer = new SimpleAnalyzer();
+
+                IndexWriterConfig index_Writer_Configuration = new IndexWriterConfig(analyzer);
+                int index_Document_Count = 0;
+
+                try (IndexWriter index_Writer = new IndexWriter(FSDirectory.open(SOFTWARE_INDEX_DIRECTORY.toPath()), index_Writer_Configuration))
+                {
+                    System.out.println("Indexing DB to Directory: " + SOFTWARE_INDEX_DIRECTORY + " ...");
+                    index_Document_Count = indexSoftwareDocuments(index_Writer);
+                }
+                catch (Spiceworks_Archive_Exception | SQLException ex)
+                {
+
+                }
+                System.out.println("Total Records Indexed: " + index_Document_Count);
+
+            }
+            catch (IOException ex)
+            {
+
+            }
+            return true;
+        }
+        
         return false;
     }
 
-    private int indexDocuments(IndexWriter index_Writer) throws Spiceworks_Archive_Exception, SQLException, IOException
+    private int indexTicketDocuments(IndexWriter index_Writer) throws Spiceworks_Archive_Exception, SQLException, IOException
     {
-        ResultSet database_Results = data_Layer.getLuceneIndexResults();
+        ResultSet database_Results = data_Layer.getLuceneIndexTicketResults();
         int document_Count = 0;
         while (database_Results.next())
         {
@@ -382,14 +466,62 @@ public class Spiceworks_Archive_Logic
 
         return document_Count;
     }
+    private int indexSoftwareDocuments(IndexWriter index_Writer) throws Spiceworks_Archive_Exception, SQLException, IOException
+    {
+        ResultSet database_Results = data_Layer.getLuceneIndexSoftwareResults();
+        int document_Count = 0;
+        while (database_Results.next())
+        {
+            Document index_Document = new Document();
+            //"select id,summary,description,first_name,last_name,attachment_name from ticket_plus_attachments"
 
-    private ObservableList<Ticket> searchIndex(String query_String)
+            int id = database_Results.getInt("id");
+            String category = database_Results.getString("category");
+            String serial_number = database_Results.getString("serial_number");
+            String note = database_Results.getString("note");
+            String library_category = database_Results.getString("library_category");
+            
+
+            if (category == null)
+            {
+                category = "";
+            }
+            if (serial_number == null)
+            {
+                serial_number = "";
+            }
+            if (note == null)
+            {
+                note = "";
+            }
+            if (library_category == null)
+            {
+                library_category = "";
+            }
+            
+
+            index_Document.add(new StoredField("id", id));
+            index_Document.add(new TextField("category", category, Field.Store.YES));
+            index_Document.add(new TextField("serial_number", serial_number, Field.Store.YES));
+            index_Document.add(new TextField("note", note, Field.Store.YES));
+            index_Document.add(new TextField("library_category", library_category, Field.Store.YES));
+            
+
+            index_Writer.addDocument(index_Document);
+            document_Count++;
+
+        }
+
+        return document_Count;
+    }
+
+    private ObservableList<Ticket> searchTicketIndex(String query_String)
     {
         ObservableList<Ticket> ticket_List = FXCollections.observableArrayList();
 
         try
         {
-            Directory directory = FSDirectory.open(INDEX_DIRECTORY.toPath());
+            Directory directory = FSDirectory.open(TICKET_INDEX_DIRECTORY.toPath());
             MultiFieldQueryParser query_Parser = new MultiFieldQueryParser(new String[]
             {
                 "summary", "description", "first_name", "last_name", "attachment_name"
@@ -417,8 +549,8 @@ public class Spiceworks_Archive_Logic
                 int docId = hits[i].doc;
 
                 Document d = searcher.doc(docId);
-                int index = ticket_IDs.indexOf(d.get("id"));
-                Ticket current = tickets.get(index);
+                int index = list_Ticket_IDs.indexOf(d.get("id"));
+                Ticket current = list_Tickets.get(index);
                 if (ticket_List.indexOf(current) == -1)
                 {
                     if (has_Attachment)
@@ -452,6 +584,146 @@ public class Spiceworks_Archive_Logic
 
         }
         return ticket_List;
+    }
+    private ObservableList<Software> searchSoftwareIndex(String query_String, javafx.scene.control.TextField message_Box)
+    {
+        ObservableList<Software> software_List = FXCollections.observableArrayList();
+
+        try
+        {
+            Directory directory = FSDirectory.open(SOFTWARE_INDEX_DIRECTORY.toPath());
+            MultiFieldQueryParser query_Parser = new MultiFieldQueryParser(new String[]
+            {
+                "category", "serial_number", "note", "library_category"
+            }, new StandardAnalyzer());
+            DirectoryReader reader = DirectoryReader.open(directory);
+            IndexSearcher searcher = new IndexSearcher(reader);
+
+            query_Parser.setPhraseSlop(0);
+
+            query_Parser.setLowercaseExpandedTerms(true);
+
+            Query query = query_Parser.parse(query_String);
+
+            //TopDocs topDocs = searcher.search(query, MAX_HITS);
+            TopScoreDocCollector collector = TopScoreDocCollector.create(MAX_HITS);
+            searcher.search(query, new PositiveScoresOnlyCollector(collector));
+            TopDocs topDocs = collector.topDocs();
+
+            ScoreDoc[] hits = topDocs.scoreDocs;
+
+            int software_Count = 0;
+            for (int i = 0; i < hits.length; i++)
+            {
+
+                int docId = hits[i].doc;
+
+                Document document = searcher.doc(docId);
+                int index = list_Software_IDs.indexOf(document.get("id"));
+                Software current = list_Software.get(index);
+                if (software_List.indexOf(current) == -1) //MAKES SURE THERE ARE NO DUPLICATE ROWS PROCESSED
+                {
+                        software_Count++;
+                        software_List.add(current);
+                }
+            }
+            message_Box.setText(message_Box.getText() + ", Record(s) Found: " + software_Count);
+            if (hits.length == 0)
+            {
+
+                System.out.println("No Data Founds");
+
+            }
+
+        }
+        catch (IOException | ParseException ex)
+        {
+
+        }
+        return software_List;
+    }
+    
+    public Software insertSoftwareRecord(String library_id, String description, String serial_number,String note,String category_Name,String created_on)
+    {
+        if(library_id == null )
+        {
+            library_id = "";
+        }
+        if(description == null)
+        {
+            description = "";
+        }
+        if(serial_number == null)
+        {
+            serial_number = "";
+        }
+        if(note == null)
+        {
+            note = "";
+        }
+        if(category_Name == null)
+        {
+            category_Name = "";
+        }
+        int id = data_Layer.insertSoftwareRecord(library_id, description, serial_number, note, category_Name, created_on);
+        System.out.println(id);
+        Software new_Record  = new Software(Integer.toString(id), description, serial_number, library_id, created_on, note, "IN", "NO ONE", "", "NO ONE", "");
+        list_Software_IDs.add(Integer.toString(id));
+        return new_Record;
+    }
+    public void insertSoftwareCategory(String category)
+    {
+        
+       data_Layer.insertSoftwareCategory(category);
+    }
+    public void updateCheckInFields(String status,String checked_out_by, String checked_out_at,String last_checked_out_by,String last_checked_out_at, String id)
+    {
+        
+       data_Layer.updateCheckInFields(status, checked_out_by, checked_out_at, last_checked_out_by, last_checked_out_at, id);
+    }
+    
+    public void updateSoftwareRecord(String id, String library_id, String description, String serial_number,String note,String category_Name)
+    {
+        if(library_id == null)
+        {
+            library_id = "";
+        }
+        if(description == null)
+        {
+            description = "";
+        }
+        if(serial_number == null)
+        {
+            serial_number = "";
+        }
+        if(note == null)
+        {
+            note = "";
+        }
+        if(category_Name == null)
+        {
+            category_Name = "";
+        }
+        int software_Index = list_Software_IDs.indexOf(id);
+        Software selection = list_Software.get(software_Index);
+        selection.setLibraryID(library_id);
+        selection.setCategory(category_Name + " - " + description);
+        selection.setSerialNumber(serial_number);
+        selection.setNote(note);
+        data_Layer.updateSoftwareRecord(id, library_id, description, serial_number, note, category_Name);
+    }
+    public void updateSoftwareRecordNote(String id,String note)
+    {
+        
+        
+        if(note == null)
+        {
+            note = "";
+        }
+        int software_Index = list_Software_IDs.indexOf(id);
+        Software selection = list_Software.get(software_Index);
+        selection.setNote(note);
+        data_Layer.updateSoftwareRecordNote(id, note);
     }
 
 }

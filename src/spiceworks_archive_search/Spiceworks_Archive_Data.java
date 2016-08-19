@@ -26,9 +26,11 @@ package spiceworks_archive_search;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import static java.sql.Statement.RETURN_GENERATED_KEYS;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,7 +45,8 @@ public class Spiceworks_Archive_Data
     private static final String TICKET_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_view;";
     private static final String SOFTWARE_QUERY = "select id, category,serial_number,library_id,note,status,checked_out_by,checked_out_at,last_checked_out_by,last_checked_out_at,created_on,library_category from software_categories;";
     private static final String SOFTWARE_CATEGORY_QUERY = "select distinct library_category from categories;";
-    private static final String LUCENE_INDEX_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_view;";
+    private static final String LUCENE_INDEX_TICKET_QUERY = "select id,summary,description,first_name,last_name,attachment_name from ticket_view;";
+    private static final String LUCENE_INDEX_SOFTWARE_QUERY = "select id,category,serial_number,note,library_category from software_categories;";
     private static final String TECHNICIAN_QUERY = "select first_name,last_name from admin_view;";
     
     private static final String CREATE_ADMIN_VIEW = "CREATE VIEW admin_view AS Select id,first_name,last_name from users where role='admin';";
@@ -178,6 +181,59 @@ public class Spiceworks_Archive_Data
         }
         return statement_Results;
     }
+    private int InsertSpiceworksDatabase(String select_Query)
+    {
+        
+        System.out.println(select_Query);
+        int key = -1;
+        ResultSet statement_Results = null;
+        try
+        {
+            PreparedStatement statement = software_Database_Connection.prepareStatement(select_Query,
+            Statement.RETURN_GENERATED_KEYS);
+            
+            statement.execute();
+            
+            statement_Results = statement.getGeneratedKeys();
+            /*
+            Statement database_Query = software_Database_Connection.createStatement();
+            Statement key_Query = software_Database_Connection.createStatement();
+            statement_Results = key_Query.executeQuery("select last_insert_rowid();");
+            database_Query.executeQuery(select_Query);
+            */
+            while(statement_Results.next())
+            {
+                key = statement_Results.getInt(1);
+            }
+
+        }
+        catch (SQLException ex)
+        {
+            System.err.println(ex.getMessage());
+        }
+        return key;
+    }
+    private void UpdateSpiceworksDatabase(String select_Query)
+    {
+        System.out.println(select_Query);
+        //2 = NOTHING RETURNED
+        
+        try
+        {
+
+            Statement database_Query;
+
+            database_Query = spiceworks_Database_Connection.createStatement();
+
+            database_Query.executeQuery(select_Query);
+
+        }
+        catch (SQLException ex)
+        {
+            System.err.println(ex.getMessage());
+        }
+        
+    }
     
     private ResultSet QuerySoftwareDatabase(String select_Query)
     {
@@ -267,10 +323,10 @@ public class Spiceworks_Archive_Data
 
    
     
-    public ResultSet getLuceneIndexResults() throws Spiceworks_Archive_Exception
+    public ResultSet getLuceneIndexTicketResults() throws Spiceworks_Archive_Exception
     {
         
-        ResultSet database_Response = QuerySpiceworksDatabase(LUCENE_INDEX_QUERY);
+        ResultSet database_Response = QuerySpiceworksDatabase(LUCENE_INDEX_TICKET_QUERY);
 
         if (database_Response == null)
         {
@@ -278,6 +334,61 @@ public class Spiceworks_Archive_Data
         }
         return database_Response;
     }
+    public ResultSet getLuceneIndexSoftwareResults() throws Spiceworks_Archive_Exception
+    {
+        
+        ResultSet database_Response = QuerySoftwareDatabase(LUCENE_INDEX_SOFTWARE_QUERY);
+
+        if (database_Response == null)
+        {
+            throw new Spiceworks_Archive_Exception("INDEX REQUEST COULD NOT BE RETURNED!");
+        }
+        return database_Response;
+    }
+    public int insertSoftwareRecord(String library_id, String category, String serial_number,String note,String category_Name,String created_on)
+    {
+        String insertRecord = "INSERT INTO software (library_id,category,serial_number,note,category_id,created_on,status,checked_out_by,last_checked_out_by) VALUES (\""+library_id+"\",\""+category+"\",\""+serial_number+"\",\""+note+"\","+getCategoryID(category_Name)+", \""+created_on+"\",\"IN\",\"NO ONE\",\"NO ONE\");";
+        int key = InsertSpiceworksDatabase(insertRecord);
+        return key;
+    }
+    public void insertSoftwareCategory(String category)
+    {
+        String insertCategory = "INSERT INTO categories (library_category) VALUES (\""+category+"\")";
+        UpdateSpiceworksDatabase(insertCategory);
+    }
+    public void updateCheckInFields(String status,String checked_out_by, String checked_out_at,String last_checked_out_by,String last_checked_out_at, String id)
+    {
+        String updateRecord = "UPDATE software SET status=\""+status+"\",checked_out_by=\""+checked_out_by+"\",checked_out_at=\""+checked_out_at+"\", last_checked_out_by=\""+last_checked_out_by+"\", last_checked_out_at=\""+last_checked_out_at+"\" WHERE id=\""+id+"\";";
+        QuerySoftwareDatabase(updateRecord);
+    }
+    private String getCategoryID(String category_Name)
+    {
+        String result = "";
+        try
+        {
+            System.out.println(category_Name);
+            String selectCategoryID = "Select id from categories where library_category=\""+category_Name+"\";";
+            ResultSet category_result = QuerySoftwareDatabase(selectCategoryID);
+            result = category_result.getString("id");
+        }
+        catch (SQLException ex)
+        {
+            Logger.getLogger(Spiceworks_Archive_Data.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return result;
+    }
+    public void updateSoftwareRecord(String id, String library_id, String description, String serial_number,String note,String category_Name)
+    {
+        
+        String updateRecord = "UPDATE software SET library_id=\""+library_id+"\",category=\""+description+"\",serial_number=\""+serial_number+"\", note=\""+note+"\", category_id="+getCategoryID(category_Name)+" WHERE id=\""+id+"\";";
+        QuerySoftwareDatabase(updateRecord);
+    }
+    public void updateSoftwareRecordNote(String id,String note)
+    {
+        String updateRecord = "UPDATE software SET note=\"" +note+"\" WHERE id=\""+id+"\";";
+        UpdateSpiceworksDatabase(updateRecord);
+    }
+    
     
     
 

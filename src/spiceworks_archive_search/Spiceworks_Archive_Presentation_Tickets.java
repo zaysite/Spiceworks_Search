@@ -160,7 +160,7 @@ public class Spiceworks_Archive_Presentation_Tickets
                 if (keyEvent.getCode().equals(KeyCode.ENTER))
                 {
 
-                    ticket_View.<Ticket>setItems(logic_Layer.search(search_Query.getText(), technician_Combo.getSelectionModel().getSelectedItem()));
+                    ticket_View.<Ticket>setItems(logic_Layer.searchTicket(search_Query.getText(), technician_Combo.getSelectionModel().getSelectedItem()));
                     ticket_View.getSelectionModel().clearSelection();
 
                 }
@@ -189,7 +189,7 @@ public class Spiceworks_Archive_Presentation_Tickets
                 -> 
                 {
                     
-                    ticket_View.setItems(logic_Layer.search(search_Query.getText(), technician_Combo.getSelectionModel().getSelectedItem()));
+                    ticket_View.setItems(logic_Layer.searchTicket(search_Query.getText(), technician_Combo.getSelectionModel().getSelectedItem()));
                     ticket_View.getSelectionModel().clearSelection();   //CLEAR SELECTION TO PREVENT NULL ROWS
         });
 

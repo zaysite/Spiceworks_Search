@@ -73,7 +73,10 @@ public class Spiceworks_Archive_Presentation extends Application
             
             notifyPreloader(new LabelNotification("...Creating Search Index..."));
             Thread.sleep(300);
-            logic_Layer.createLuceneIndexes();
+            notifyPreloader(new LabelNotification("...Indexing Tickets..."));
+            logic_Layer.createLuceneIndexTicket();
+            notifyPreloader(new LabelNotification("...Indexing Software..."));
+            logic_Layer.createLuceneIndexSoftware();
             
             notifyPreloader(new ProgressNotification(1));
             notifyPreloader(new LabelNotification("...Finished..."));
